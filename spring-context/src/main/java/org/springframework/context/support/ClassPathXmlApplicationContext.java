@@ -137,6 +137,12 @@ public class ClassPathXmlApplicationContext extends AbstractXmlApplicationContex
 	public ClassPathXmlApplicationContext(
 			String[] configLocations, boolean refresh, @Nullable ApplicationContext parent)
 			throws BeansException {
+		/*
+		* 调用父类构造方法，进行相关的对象创建工作
+		* 创建工作包括：里边的不断调用super，super尽头会有两个方法如下：
+		* this() 创建一个资源加载器，用来加载XML文件
+		* setParent(parent) 如果parent不为空，则把父容器和子容器进行融合操作，但是在SpringMVC中会有
+		* */
 
 		super(parent);
 		setConfigLocations(configLocations);

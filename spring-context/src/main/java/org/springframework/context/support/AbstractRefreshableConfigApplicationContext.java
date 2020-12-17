@@ -78,6 +78,11 @@ public abstract class AbstractRefreshableConfigApplicationContext extends Abstra
 			Assert.noNullElements(locations, "Config locations must not be null");
 			this.configLocations = new String[locations.length];
 			for (int i = 0; i < locations.length; i++) {
+				/*
+				* 继续对XML文件路径进行解析：
+				* 为什么要解析呢？
+				* 比如有时候写的配置文件名字中有 ${}，此时就需要解析（不过很少这么写罢了，但是他有这个功能）
+				* */
 				this.configLocations[i] = resolvePath(locations[i]).trim();
 			}
 		}
@@ -122,6 +127,22 @@ public abstract class AbstractRefreshableConfigApplicationContext extends Abstra
 	 * @see org.springframework.core.env.Environment#resolveRequiredPlaceholders(String)
 	 */
 	protected String resolvePath(String path) {
+		/*
+		* 解析路径的时候第一次getEnvironment，所以此时Environment肯定为空，
+		* 所以在此方法中创建了第一次创建了Environment
+		* 创建一个标准的环境 new StandardEnvironment()
+		* StandardEnvironment有一个无参构造方法，会直接调用父类AbstractEnvironment的构造方法
+		* 父类构造方法中有
+		* 定制化属性资源，这是一个空方法，可以自己扩展实现自己的逻辑
+		* StandardEnvironment已经继承了AbstractEnvironment，也已经重写了父类构造方法调用的customizePropertySources方法
+		* 重写的方法中调用
+		* getSystemProperties() 可以获取到了一些系统当前的配置值和系统环境值
+		* 比如环境属性值中就包括username=yanni等信息
+		*
+		* 上边刚刚处理完getEnvironment()，下边开始处理resolveRequiredPlaceholders(path)，
+		* 简单来说就是处理path中的占位符
+		*
+		*/
 		return getEnvironment().resolveRequiredPlaceholders(path);
 	}
 

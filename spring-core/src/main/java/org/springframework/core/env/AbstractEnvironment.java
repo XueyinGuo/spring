@@ -121,6 +121,10 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment {
 	 * @see #customizePropertySources(MutablePropertySources)
 	 */
 	public AbstractEnvironment() {
+		/*
+		* 定制化属性资源，这是一个空方法，可以自己扩展实现自己的逻辑
+		* StandardEnvironment已经重写了这个方法
+		* */
 		customizePropertySources(this.propertySources);
 	}
 
@@ -386,6 +390,9 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment {
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public Map<String, Object> getSystemProperties() {
 		try {
+			/*
+			* 获取到系统当前的一些配置值
+			* */
 			return (Map) System.getProperties();
 		}
 		catch (AccessControlException ex) {
@@ -415,6 +422,9 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment {
 			return Collections.emptyMap();
 		}
 		try {
+			/*
+			 * 获取到系统当前的一些环境值
+			 * */
 			return (Map) System.getenv();
 		}
 		catch (AccessControlException ex) {

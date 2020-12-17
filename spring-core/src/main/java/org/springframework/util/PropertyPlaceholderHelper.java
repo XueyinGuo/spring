@@ -134,6 +134,10 @@ public class PropertyPlaceholderHelper {
 
 		StringBuilder result = new StringBuilder(value);
 		while (startIndex != -1) {
+			/*
+			* 假如我们写的XML配置文件形如 spring_${bulabula${bula}}.xml
+			* findPlaceholderEndIndex找到 ${ 的位置并返回
+			* */
 			int endIndex = findPlaceholderEndIndex(result, startIndex);
 			if (endIndex != -1) {
 				String placeholder = result.substring(startIndex + this.placeholderPrefix.length(), endIndex);
@@ -146,8 +150,16 @@ public class PropertyPlaceholderHelper {
 							"Circular placeholder reference '" + originalPlaceholder + "' in property definitions");
 				}
 				// Recursive invocation, parsing placeholders contained in the placeholder key.
+				/*
+				* spring_${bulabula${bula}}.xml类似的XML文件格式，
+				* 我们就可以递归调用此方法来解析文件名
+				* */
 				placeholder = parseStringValue(placeholder, placeholderResolver, visitedPlaceholders);
 				// Now obtain the value for the fully resolved key...
+				/*
+				* 在此方法中取替换 ${bula} 为想要的值
+				* 方法中循环当前系统变量和环境变量来查看有没有与 key 相匹配的属性值
+				* */
 				String propVal = placeholderResolver.resolvePlaceholder(placeholder);
 				if (propVal == null && this.valueSeparator != null) {
 					int separatorIndex = placeholder.indexOf(this.valueSeparator);

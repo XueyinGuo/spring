@@ -164,6 +164,11 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	protected final Log logger = LogFactory.getLog(getClass());
 
 	/** Unique id for this context, if any. */
+	/*
+	* 创建标识用的 唯一ID
+	* AbstractRefreshableConfigApplicationContext中的
+	* beanFactory.setSerializationId(getId());就是此处赋的值
+	* */
 	private String id = ObjectUtils.identityToString(this);
 
 	/** Display name. */
@@ -190,6 +195,10 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	private final AtomicBoolean closed = new AtomicBoolean();
 
 	/** Synchronization monitor for the "refresh" and "destroy". */
+	/*
+	* 调用refresh的时候为什么要加锁？
+	* "refresh" and "destroy"要做同步
+	* */
 	private final Object startupShutdownMonitor = new Object();
 
 	/** Reference to the JVM shutdown hook, if registered. */
@@ -227,6 +236,10 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * Create a new AbstractApplicationContext with no parent.
 	 */
 	public AbstractApplicationContext() {
+		/*
+		* 解析当前系统运行的时候的某些资源，比如我们写的XMl文件
+		*
+		* */
 		this.resourcePatternResolver = getResourcePatternResolver();
 	}
 
@@ -235,6 +248,10 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * @param parent the parent context
 	 */
 	public AbstractApplicationContext(@Nullable ApplicationContext parent) {
+		/*
+		* this() 创建一个资源加载器，用来加载XML文件
+		* setParent(parent) 如果parent不为空，则把父容器和子容器进行融合操作，但是在SpringMVC中会有
+		* */
 		this();
 		setParent(parent);
 	}
@@ -316,6 +333,16 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	@Override
 	public ConfigurableEnvironment getEnvironment() {
 		if (this.environment == null) {
+			/*
+			* 创建一个标准的环境 new StandardEnvironment()
+			* StandardEnvironment有一个无参构造方法，会直接调用父类AbstractEnvironment的构造方法
+			* 父类构造方法中有
+			* 定制化属性资源，这是一个空方法，可以自己扩展实现自己的逻辑
+			* StandardEnvironment已经继承了AbstractEnvironment，也已经重写了父类构造方法调用的customizePropertySources方法
+			* 重写的方法中调用
+			* getSystemProperties() 可以获取到了一些系统当前的配置值和系统环境值
+			* 比如环境属性值中就包括username=yanni等信息
+			* */
 			this.environment = createEnvironment();
 		}
 		return this.environment;
@@ -456,6 +483,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * @see org.springframework.core.io.support.PathMatchingResourcePatternResolver
 	 */
 	protected ResourcePatternResolver getResourcePatternResolver() {
+		/*
+		* 创建一个资源加载器，用来加载XML文件
+		* */
 		return new PathMatchingResourcePatternResolver(this);
 	}
 
@@ -474,6 +504,10 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	@Override
 	public void setParent(@Nullable ApplicationContext parent) {
+		/*
+		* private ApplicationContext parent;
+		* 如果parent不为空，则把父容器和子容器进行融合操作，但是在SpringMVC中会有
+		* */
 		this.parent = parent;
 		if (parent != null) {
 			Environment parentEnvironment = parent.getEnvironment();
@@ -518,11 +552,12 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		synchronized (this.startupShutdownMonitor) {
 			// Prepare this context for refreshing.
 			/*
+			* //各种准备工作!!!!!!!!!!!!!!!
 			* 设置容器启动时间
 			* 设置活跃标志位为true，设置关闭标志位为false
 			* 设置Environment对象，设置监听器为空集合
 			* */
-			prepareRefresh();  //各种准备工作
+			prepareRefresh();
 
 			// Tell the subclass to refresh the internal bean factory.
 			/*
