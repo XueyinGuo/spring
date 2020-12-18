@@ -180,7 +180,7 @@ public abstract class AbstractBeanDefinitionReader implements BeanDefinitionRead
 	}
 
 
-	@Override
+	@Override /*重载到单个 resource 了 */
 	public int  loadBeanDefinitions(Resource... resources) throws BeanDefinitionStoreException {
 		Assert.notNull(resources, "Resource array must not be null");
 		int count = 0;
@@ -190,7 +190,7 @@ public abstract class AbstractBeanDefinitionReader implements BeanDefinitionRead
 		return count;
 	}
 
-	@Override
+	@Override /* 往下该Resource[]了 */
 	public int loadBeanDefinitions(String location) throws BeanDefinitionStoreException {
 		return loadBeanDefinitions(location, null);
 	}
@@ -211,15 +211,26 @@ public abstract class AbstractBeanDefinitionReader implements BeanDefinitionRead
 	 * @see #loadBeanDefinitions(org.springframework.core.io.Resource[])
 	 */
 	public int loadBeanDefinitions(String location, @Nullable Set<Resource> actualResources) throws BeanDefinitionStoreException {
+		/*
+		 * 这个东西就是一个 ClassPathXmlApplicationContext对象
+		 * TODO 但是这个ClassPathXmlApplicationContext对象是什么时候赋值的呢
+		 * */
 		ResourceLoader resourceLoader = getResourceLoader();
 		if (resourceLoader == null) {
 			throw new BeanDefinitionStoreException(
 					"Cannot load bean definitions from location [" + location + "]: no ResourceLoader available");
 		}
-
+		/*
+		* 可以扭头去查看 ClassPathXmlApplicationContext 的类图，
+		* 在很顶层的地方可以发现他实现了 ResourcePatternResolver接口
+		* */
 		if (resourceLoader instanceof ResourcePatternResolver) {
 			// Resource pattern matching available.
 			try {
+				/*
+				 * 这里就把单个的String类型的XML文件读变成了一个Resource数组对象
+				 * 在这个方法中我们会去做一些路径匹配的工作，比如classpath*:
+				 * */
 				Resource[] resources = ((ResourcePatternResolver) resourceLoader).getResources(location);
 				int count = loadBeanDefinitions(resources);
 				if (actualResources != null) {
@@ -250,6 +261,9 @@ public abstract class AbstractBeanDefinitionReader implements BeanDefinitionRead
 	}
 
 	@Override
+	/*
+	 * 这里是 for循环 loadBeanDefinitions(单个String)
+	 * */
 	public int loadBeanDefinitions(String... locations) throws BeanDefinitionStoreException {
 		Assert.notNull(locations, "Location array must not be null");
 		int count = 0;

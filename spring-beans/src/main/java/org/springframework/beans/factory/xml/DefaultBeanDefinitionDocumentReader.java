@@ -93,6 +93,11 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	@Override
 	public void registerBeanDefinitions(Document doc, XmlReaderContext readerContext) {
 		this.readerContext = readerContext;
+		/*
+		* ！！！！！！！！！！！！！！！！！！！！！！！
+		* doc.getDocumentElement() 获取到根元素的信息，然后传入到do方法
+		* 开始干活！！
+		* */
 		doRegisterBeanDefinitions(doc.getDocumentElement());
 	}
 
@@ -125,9 +130,19 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 		// the new (child) delegate with a reference to the parent for fallback purposes,
 		// then ultimately reset this.delegate back to its original (parent) reference.
 		// this behavior emulates a stack of delegates without actually necessitating one.
+		/*
+		* delegate 就是 相当于创建一个单独的解析器来进行一些解析处理工作，用来处理当前的标签
+		* 元素值、节点信息等
+		* */
 		BeanDefinitionParserDelegate parent = this.delegate;
 		this.delegate = createDelegate(getReaderContext(), root, parent);
-
+		/*
+		* Spring中很少用 profile 这个标签，所以单独的Spring跳不进这个判断，
+		* 但是在SpringBoot中就可以有这个profile
+		* 指定读取某个配置文件。
+		*
+		* 其实在Spring中也不是不能用，比如在<beans>标签中我们就可指定读取哪个配置文件
+		* */
 		if (this.delegate.isDefaultNamespace(root)) {
 			String profileSpec = root.getAttribute(PROFILE_ATTRIBUTE);
 			if (StringUtils.hasText(profileSpec)) {
@@ -144,9 +159,20 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 				}
 			}
 		}
-
+		/*
+		* 该方法暂时为空，留作扩展实现用
+		* TODO 会在SpringMVC中使用扩展在解析文件之前和之后的具体操作 preProcessXml(root);
+		* */
 		preProcessXml(root);
+		/*
+		* ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+		* 解析bean的定义信息，用刚才的 delegate 开始从根节点开始解析
+		* */
 		parseBeanDefinitions(root, this.delegate);
+		/*
+		 * 该方法暂时为空，留作扩展实现用
+		 * TODO 会在SpringMVC中使用扩展在解析文件之前和之后的具体操作 postProcessXml(root);
+		 * */
 		postProcessXml(root);
 
 		this.delegate = parent;
@@ -166,16 +192,38 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	 * @param root the DOM root element of the document
 	 */
 	protected void parseBeanDefinitions(Element root, BeanDefinitionParserDelegate delegate) {
+		/*
+		* 是否是默认的命名空间中的元素  isDefaultNamespace()
+		*
+		* 比如： <import> <bean> <alias> <beans> <description> 等原生支持的标签
+		* 但是我们在项目中经常用到 <tx:...>  <aop:...> <context:...>
+		* 后者们都是额外的命名空间
+		* */
 		if (delegate.isDefaultNamespace(root)) {
+			/*
+			* root就是<beans>
+			* nl 就是各种 里边的 <bean>
+			* */
 			NodeList nl = root.getChildNodes();
 			for (int i = 0; i < nl.getLength(); i++) {
 				Node node = nl.item(i);
+				/*
+				* Element 中是各种标签
+				* */
 				if (node instanceof Element) {
 					Element ele = (Element) node;
 					if (delegate.isDefaultNamespace(ele)) {
+						/*
+						 * 开始解析原生标签
+						 * */
 						parseDefaultElement(ele, delegate);
 					}
 					else {
+						/*
+						 * 开始解析额外的标签
+						 * 根据命名空间找到对象的NamespaceHandler
+						 * 调用自定义的NamespaceHandler进行解析
+						 * */
 						delegate.parseCustomElement(ele);
 					}
 				}
@@ -187,6 +235,9 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	}
 
 	private void parseDefaultElement(Element ele, BeanDefinitionParserDelegate delegate) {
+		/*
+		* 开始解析原生标签
+		* */
 		if (delegate.nodeNameEquals(ele, IMPORT_ELEMENT)) {
 			importBeanDefinitionResource(ele);
 		}
@@ -303,11 +354,30 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	 * and registering it with the registry.
 	 */
 	protected void processBeanDefinition(Element ele, BeanDefinitionParserDelegate delegate) {
+		/*
+		* beanDefinitionHolder是beanDefinition对象的封装类，封装了beanDefinition bean的名字和别名
+		* 用它来完成向IOC容器的注册，得到这个beanDefinitionHolder就意味着：
+		*
+		* beanDefinition是通过BeanDefinitionParserDelegate对XML元素的
+		* 信息按照Spring的bean规则进行解析得到的
+		*
+		* 解析完成之后 得到一个 有完整beanDefinition定义信息的 beanName 和 别名的  BeanDefinitionHolder
+		* 然后就可以进行注册了
+		* */
 		BeanDefinitionHolder bdHolder = delegate.parseBeanDefinitionElement(ele);
 		if (bdHolder != null) {
+			/*
+			* 装饰什么？？？？？？
+			*
+			* 一般不用管， 一般用不到
+			* */
 			bdHolder = delegate.decorateBeanDefinitionIfRequired(ele, bdHolder);
 			try {
 				// Register the final decorated instance.
+				/*
+				* 向IOC容器注册解析到的 beanDefinition ，
+				* 将给定的bean定义注册到给定的bean工厂。
+				* */
 				BeanDefinitionReaderUtils.registerBeanDefinition(bdHolder, getReaderContext().getRegistry());
 			}
 			catch (BeanDefinitionStoreException ex) {
@@ -315,6 +385,10 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 						bdHolder.getBeanName() + "'", ele, ex);
 			}
 			// Send registration event.
+			/*
+			* 在beanDefinition 向 IOC容器注册完成之后 ，发送消息，
+			* 然后就可以进行实例化操作了
+			* */
 			getReaderContext().fireComponentRegistered(new BeanComponentDefinition(bdHolder));
 		}
 	}

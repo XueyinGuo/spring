@@ -931,6 +931,11 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 		if (beanDefinition instanceof AbstractBeanDefinition) {
 			try {
+				/*
+				* 注册之前的最后一个校验，这里的与之前xml的校验不同的地方在于
+				* 这里是对 abstractBeanDefinition 小户型的 methodOverrides校验
+				* 检验 methodOverrides 是否与工厂方法并存 或者 methodOverrides对应的方法根本不存在
+				* */
 				((AbstractBeanDefinition) beanDefinition).validate();
 			}
 			catch (BeanDefinitionValidationException ex) {
@@ -938,7 +943,10 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 						"Validation of bean definition failed", ex);
 			}
 		}
-
+		/*
+		* 查看当前的 beanDefinitionMap 中是否已经有同名的bean
+		* 如果存在 查看是否 设置 可以覆盖  AllowBeanDefinitionOverriding！  前边看到过
+		* */
 		BeanDefinition existingDefinition = this.beanDefinitionMap.get(beanName);
 		if (existingDefinition != null) {
 			if (!isAllowBeanDefinitionOverriding()) {
@@ -966,6 +974,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 							"] with [" + beanDefinition + "]");
 				}
 			}
+			/*
+			* 注册其实就是把 beanName - beanDefinition 的 K-V 对儿 放进 Map
+			* */
 			this.beanDefinitionMap.put(beanName, beanDefinition);
 		}
 		else {
@@ -982,6 +993,12 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			}
 			else {
 				// Still in startup registration phase
+				/*
+				 * 注册其实就是把 beanName - beanDefinition 的 K-V 对儿 放进 Map
+				 * 上边有重名的就不放近 beanDefinitionNames
+				 * 这里没有重名的  就放近 beanDefinitionNames
+				 * 然后就注册完成了
+				 * */
 				this.beanDefinitionMap.put(beanName, beanDefinition);
 				this.beanDefinitionNames.add(beanName);
 				removeManualSingletonName(beanName);

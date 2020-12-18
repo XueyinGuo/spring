@@ -275,6 +275,12 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 	}
 
 	@Override
+	/*
+	* 这里就把单个的String类型的XML文件读变成了一个Resource数组对象
+	* CLASSPATH_ALL_URL_PREFIX 就是 classpath*
+	* 在XML中我们有时候会写
+	* <context:property-placeholder location="classpath:dc.properties" />
+	* */
 	public Resource[] getResources(String locationPattern) throws IOException {
 		Assert.notNull(locationPattern, "Location pattern must not be null");
 		if (locationPattern.startsWith(CLASSPATH_ALL_URL_PREFIX)) {

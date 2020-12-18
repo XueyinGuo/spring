@@ -549,6 +549,10 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 	@Override
 	public void refresh() throws BeansException, IllegalStateException {
+		/*
+		 * 调用refresh的时候为什么要加锁？
+		 * "refresh" and "destroy"要做同步
+		 * */
 		synchronized (this.startupShutdownMonitor) {
 			// Prepare this context for refreshing.
 			/*
@@ -556,7 +560,14 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			* 设置容器启动时间
 			* 设置活跃标志位为true，设置关闭标志位为false
 			* 设置Environment对象，设置监听器为空集合
+			*
+			* 其中有一个我们可以自己扩展的方法，叫做 initPropertySources()
+			* 如果我们自己扩展实现了一些 getEnvironment().setRequiredProperties(String... str)
+			* 可以在 prepareRefresh(); 的 getEnvironment().validateRequiredProperties();中
+            * 得到验证，如果没有设置的属性则直接抛出异常
+            * 如果非得要有一个莫名其妙的参数，可以通过 -D参数指定， 比如 -D abc=def
 			* */
+
 			prepareRefresh();
 
 			// Tell the subclass to refresh the internal bean factory.
@@ -663,6 +674,10 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void prepareRefresh() {
 		// Switch to active.
+		/*
+		* 记录启动时间，设置关闭标志位为false，设置启动标志位为true
+		* 表明当前容器是在运行状态
+		* */
 		this.startupDate = System.currentTimeMillis();
 		this.closed.set(false);
 		this.active.set(true);
@@ -677,6 +692,30 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		}
 
 		// Initialize any placeholder property sources in the context environment.
+		/*
+		* 这里是个空方法，可以自己去继承父类实现 initPropertySources()
+		* 可以继承ClassPathXmlApplicationContext类重写该方法
+		*
+		* public class MyClassPathXmlApplicationContext extends ClassPathXmlApplicationContext{
+		* 		构造方法（String... configLocations）{
+		* 			super.(configLocations)
+		* 		}
+		*
+		* 		@Override
+		* 		protected void initPropertySources(){
+		* 			自己扩展
+		* 		}
+		* }
+		*
+		* 如果对于我们的web应用也可以有自己的扩展实现，
+		* @see org.springframework.web.context.support.WebApplicationContextUtils#initServletPropertySources
+		* */
+		/*
+		* 如果我们自己扩展实现了一些 setRequiredProperties(String... str)
+		* 可以在下一步的 getEnvironment().validateRequiredProperties();中
+		* 得到验证，如果没有设置的属性则直接抛出异常
+		* 如果非得要有一个莫名其妙的参数，可以通过 -D参数指定， 比如 -D abc=def
+		* */
 		initPropertySources();
 
 		// Validate that all properties marked as required are resolvable:
@@ -684,6 +723,17 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		getEnvironment().validateRequiredProperties();
 
 		// Store pre-refresh ApplicationListeners...
+		/*
+		* 判断刷新前的应用程序监听器集合是否为空，如果为空，则将监听器添加到此集合中
+		* 如果不等于空，则清空所有集合元素，
+		* 为啥要进行判断呢？
+		* 因为有些时候这些集合并不为空，虽然在单纯的Spring中是空
+		* 但是在SpringBoot中 applicationListeners 就不是空的了，这是为了之后方便扩展吧
+		* 然后就可以吧applicationListeners中的监听器们放入到 earlyApplicationListeners早期监听器集合中了
+		* 如果想让代码生效，则只需要在当前的applicationListeners设置一些属性值就好了
+		*
+		* 所以此处也是扩展功能的实现，扩展也是为了之后的上层项目的扩展，单独的Spring项目并不需要折样的扩展
+		* */
 		if (this.earlyApplicationListeners == null) {
 			this.earlyApplicationListeners = new LinkedHashSet<>(this.applicationListeners);
 		}
@@ -695,6 +745,11 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 		// Allow for the collection of early ApplicationEvents,
 		// to be published once the multicaster is available...
+		/*
+		* 创建刷新前的监听事件集合
+		* 这里是监听事件集合，上边那些事监听器集合
+		* 一个Events，一个Listeners，不是一种东西
+		* */
 		this.earlyApplicationEvents = new LinkedHashSet<>();
 	}
 
@@ -714,6 +769,14 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * @see #getBeanFactory()
 	 */
 	protected ConfigurableListableBeanFactory obtainFreshBeanFactory() {
+		/*
+		* 创建一个新的工厂，并且为工厂做了一下操作：
+		* 设置了一些Aware接口的忽略
+        * 还设置了一些比较重要的属性值
+        * 比如：allowBeanDefinitionOverriding 和 allowCircularReference都是赋值默认值true
+        * 如果想要自己扩展，可以重写customizeBeanFactory方法进行覆盖，
+        * 这里还有一个重中之重的操作就是 loadBeanDefinitions()!!!
+		* */
 		refreshBeanFactory();
 		return getBeanFactory();
 	}
@@ -1384,6 +1447,10 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	@Nullable
 	protected BeanFactory getInternalParentBeanFactory() {
+		/*
+		* 如果是ConfigurableApplicationContext类型，则直接返回父类的Bean工厂
+		* 如果不是直接返回父类
+		* */
 		return (getParent() instanceof ConfigurableApplicationContext ?
 				((ConfigurableApplicationContext) getParent()).getBeanFactory() : getParent());
 	}

@@ -83,17 +83,51 @@ public abstract class AbstractXmlApplicationContext extends AbstractRefreshableC
 	@Override
 	protected void loadBeanDefinitions(DefaultListableBeanFactory beanFactory) throws BeansException, IOException {
 		// Create a new XmlBeanDefinitionReader for the given BeanFactory.
+		/*
+		* 适配器模式，把beanFactory当成火鸡，
+		* 把XmlBeanDefinitionReader当成鸭子，
+		* 为给定的BeanFactory创建一个新的XmlBeanDefinitionReader，
+		* 这是一个XML文件读取器，专门解析XML文件的
+		* */
 		XmlBeanDefinitionReader beanDefinitionReader = new XmlBeanDefinitionReader(beanFactory);
 
 		// Configure the bean definition reader with this context's
 		// resource loading environment.
 		beanDefinitionReader.setEnvironment(this.getEnvironment());
 		beanDefinitionReader.setResourceLoader(this);
+		/*
+		* EntityResolver
+		* 解析XML文件之前，必须要知道这个XML整体的结构是什么样的，然鹅这个整体的结构是在xsd中存放，xsd中存规范了
+		* 接口的名称等信息，本地和互联网都有这些xsd文件，所以本类就是做一些加载这些xsd文件做一些解析工作
+		* */
+		/*
+		* 加载xsd，
+		* 先设置他的类加载器，然后赋值他的schemaMappingsLocation
+		* 但是我们暂时没办法通过这个地址去获取META-INF中spring.schemas文件中的内容
+		* 但是debug的时候IDEA为了展示信息会有调用toString方法
+		    @Override
+			public String toString() {
+				return "EntityResolver using schema mappings " + getSchemaMappings();
+			}
+		*
+		* */
 		beanDefinitionReader.setEntityResolver(new ResourceEntityResolver(this));
 
 		// Allow a subclass to provide custom initialization of the reader,
 		// then proceed with actually loading the bean definitions.
+		/*
+		* 设置是否对XML进行验证，默认为true
+		* 验证就是指用dtd文件格式还是用xsd文件格式对自己的xml进行验证
+		* */
 		initBeanDefinitionReader(beanDefinitionReader);
+		
+		/*
+		* 方法重载好多次，逻辑就是先从beanDefinitionReader中获得 configLocations的数组值，也就是xml的String名字的数组
+		* 然后另外的重载就是for循环挨个遍历取出之后获取
+		*
+		* 总的流程就是从 String[] -> String -> Resource[] -> Resource -> Document -> BeanDefinition对象，
+		* 重载了方法老多了
+		* */
 		loadBeanDefinitions(beanDefinitionReader);
 	}
 
@@ -122,10 +156,16 @@ public abstract class AbstractXmlApplicationContext extends AbstractRefreshableC
 	 * @see #getResourcePatternResolver
 	 */
 	protected void loadBeanDefinitions(XmlBeanDefinitionReader reader) throws BeansException, IOException {
+		/*
+		* 以Resource的方式获得配置文件的资源位置
+		* */
 		Resource[] configResources = getConfigResources();
 		if (configResources != null) {
 			reader.loadBeanDefinitions(configResources);
 		}
+		/*
+		* 以String的方式获得配置文件的资源位置
+		* */
 		String[] configLocations = getConfigLocations();
 		if (configLocations != null) {
 			reader.loadBeanDefinitions(configLocations);

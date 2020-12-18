@@ -172,7 +172,20 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 * Create a new AbstractAutowireCapableBeanFactory.
 	 */
 	public AbstractAutowireCapableBeanFactory() {
+		/*
+		* super中设置 beanClassLoader 类加载器，用来处理bean的名称
+		* CacheBeanMetadata 设置bean元数据的缓存（缓存干嘛先不管）
+		* 剩下还有一堆的属性值设置，其中比较重要的是：
+		* allowCircularReference = true（是否解决循环依赖的问题）
+		* */
 		super();
+		/*
+		* 还设置了一些忽略依赖的Aware接口
+        * 【在bean创建过程中，我们会进行一系列的Aware接口的处理，叫做invokeAwareMethods用来统一处理】
+        * 【Aware接口的一些基本操作】
+        * 这里设置忽略是为了在bean创建过程中取统一处理，而不是在这里就进行处理，所以先设置了忽略
+        * TODO 写和不写的小区别，请见下回分解
+		* */
 		ignoreDependencyInterface(BeanNameAware.class);
 		ignoreDependencyInterface(BeanFactoryAware.class);
 		ignoreDependencyInterface(BeanClassLoaderAware.class);

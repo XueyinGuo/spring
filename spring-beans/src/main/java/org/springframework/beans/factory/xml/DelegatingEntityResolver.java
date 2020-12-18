@@ -60,6 +60,19 @@ public class DelegatingEntityResolver implements EntityResolver {
 	 */
 	public DelegatingEntityResolver(@Nullable ClassLoader classLoader) {
 		this.dtdResolver = new BeansDtdResolver();
+		/*
+		* 上边那个是dtd解析的，但是dtd现在很少用了
+		* 下边这个是加载xsd的，
+		* 先设置他的类加载器，然后赋值他的schemaMappingsLocation
+		* 但是我们暂时没办法通过这个地址去获取META-INF中spring.schemas文件中的内容
+		* 但是debug的时候IDEA为了展示信息会有调用toString方法
+		    @Override
+			public String toString() {
+				return "EntityResolver using schema mappings " + getSchemaMappings();
+			}
+		*
+		* TODO 传入这个classloader是干啥的
+		* */
 		this.schemaResolver = new PluggableSchemaResolver(classLoader);
 	}
 

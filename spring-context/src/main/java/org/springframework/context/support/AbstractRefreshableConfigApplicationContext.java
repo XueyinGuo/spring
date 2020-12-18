@@ -82,6 +82,7 @@ public abstract class AbstractRefreshableConfigApplicationContext extends Abstra
 				* 继续对XML文件路径进行解析：
 				* 为什么要解析呢？
 				* 比如有时候写的配置文件名字中有 ${}，此时就需要解析（不过很少这么写罢了，但是他有这个功能）
+				* String[] configLocations定义配置路径，默认是个字符串
 				* */
 				this.configLocations[i] = resolvePath(locations[i]).trim();
 			}

@@ -143,8 +143,13 @@ public class ClassPathXmlApplicationContext extends AbstractXmlApplicationContex
 		* this() 创建一个资源加载器，用来加载XML文件
 		* setParent(parent) 如果parent不为空，则把父容器和子容器进行融合操作，但是在SpringMVC中会有
 		* */
-
 		super(parent);
+		/*
+		 * 对XML文件路径进行解析：
+		 * 为什么要解析呢？
+		 * 比如有时候写的配置文件名字中有 ${}，此时就需要解析（不过很少这么写罢了，但是他有这个功能）
+		 * String[] configLocations定义配置路径，默认是个字符串
+		 * */
 		setConfigLocations(configLocations);
 		if (refresh) {
 			refresh();

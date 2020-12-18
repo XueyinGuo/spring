@@ -412,6 +412,9 @@ public class BeanDefinitionParserDelegate {
 	 */
 	@Nullable
 	public BeanDefinitionHolder parseBeanDefinitionElement(Element ele, @Nullable BeanDefinition containingBean) {
+		/*
+		* 获取 id 属性和 name 属性， 下边的 aliases 是别名的数组，把别名进行分割解析
+		* */
 		String id = ele.getAttribute(ID_ATTRIBUTE);
 		String nameAttr = ele.getAttribute(NAME_ATTRIBUTE);
 
@@ -422,6 +425,9 @@ public class BeanDefinitionParserDelegate {
 		}
 
 		String beanName = id;
+		/*
+		* 如果没指定ID， 就用 name 来当 id
+		* */
 		if (!StringUtils.hasText(beanName) && !aliases.isEmpty()) {
 			beanName = aliases.remove(0);
 			if (logger.isTraceEnabled()) {
@@ -431,9 +437,20 @@ public class BeanDefinitionParserDelegate {
 		}
 
 		if (containingBean == null) {
+			/*
+			* 在一个配置文件中不能配置多个重名的bean对象
+			* */
 			checkNameUniqueness(beanName, aliases, ele);
 		}
-
+		/*
+		* parseBeanDefinitionElement(ele, beanName, containingBean);
+		* 跟此时所处的方法的名字是一样的，但是这不是递归，这是又一次重载
+		* 这个方法存在的意义就是，我们的标签中不能只存在这么几个标签，还有剩余的更多的是
+		* 比如 lazy-init  abstract  init-method  等等
+		*
+		* 此方法执行完之后，就已经是一个完整版的 beanDefinition 了，
+		* 就可以放进 beanFactory 中了，但是放进 beanDefinitionMap 中呢？？  还是放到 beanDefinitionNames 中呢？？？
+		* */
 		AbstractBeanDefinition beanDefinition = parseBeanDefinitionElement(ele, beanName, containingBean);
 		if (beanDefinition != null) {
 			if (!StringUtils.hasText(beanName)) {
@@ -465,6 +482,9 @@ public class BeanDefinitionParserDelegate {
 				}
 			}
 			String[] aliasesArray = StringUtils.toStringArray(aliases);
+			/*
+			* 搞成一个 beanDefinitionHolder 中的三个参数就是 beanDefinition 完整版的定义信息 和 bean名称 + 别名
+			* */
 			return new BeanDefinitionHolder(beanDefinition, beanName, aliasesArray);
 		}
 
@@ -501,28 +521,56 @@ public class BeanDefinitionParserDelegate {
 			Element ele, String beanName, @Nullable BeanDefinition containingBean) {
 
 		this.parseState.push(new BeanEntry(beanName));
-
+		/*
+		* 解析 class 属性
+		* */
 		String className = null;
 		if (ele.hasAttribute(CLASS_ATTRIBUTE)) {
 			className = ele.getAttribute(CLASS_ATTRIBUTE).trim();
 		}
+		/*
+		 * 解析 parent 属性，查看是否有父类
+		 * */
 		String parent = null;
 		if (ele.hasAttribute(PARENT_ATTRIBUTE)) {
 			parent = ele.getAttribute(PARENT_ATTRIBUTE);
 		}
 
 		try {
+			/*
+			* 其实上一步骤完成之后就可以进行实例化操作了，其实BeanDefinition最主要的目的就是进行实例化操作
+			* 如果只进行实例化的话，在有了 class 属性之后就已经可以通过反射的方式进行实例化了，而且我也已经有了beanName属性
+			* 所以说 句柄 和 对象都已经有了 ， 所以接下来就可以开始进行对BeanDefinition对象进行封装了
+			*
+			*
+			* 这步骤就是创建装载bean信息的 AbstractBeanDefinition 对象， 实际的实现是 GenericBeanDefinition，
+			* 设置了 父类的名称，自己的类名等信息
+			* */
 			AbstractBeanDefinition bd = createBeanDefinition(className, parent);
-
+			/*
+			* 上一步创建完 BeanDefinition 之后， 下边设置各种属性值就完了
+			* */
+			/*解析bean标签的其他属性*/
 			parseBeanDefinitionAttributes(ele, beanName, containingBean, bd);
+			/*解析 description 属性*/
 			bd.setDescription(DomUtils.getChildElementValueByTagName(ele, DESCRIPTION_ELEMENT));
-
+			/*
+			* 解析元数据 ： 处理的元素就是 <meta> 标签
+			* */
 			parseMetaElements(ele, bd);
+			/*解析 lookup-method 属性*/
 			parseLookupOverrideSubElements(ele, bd.getMethodOverrides());
+			/*解析 replaceed-method 属性*/
 			parseReplacedMethodSubElements(ele, bd.getMethodOverrides());
-
+			/*
+			* ！！！！！！！！！！！！！！
+			* 解析 构造函数 */
 			parseConstructorArgElements(ele, bd);
+
+			/*解析 property 子元素 */
 			parsePropertyElements(ele, bd);
+
+			/*解析 Qualifier 子元素*/
 			parseQualifierElements(ele, bd);
 
 			bd.setResource(this.readerContext.getResource());
@@ -776,9 +824,15 @@ public class BeanDefinitionParserDelegate {
 	 * Parse a constructor-arg element.
 	 */
 	public void parseConstructorArgElement(Element ele, BeanDefinition bd) {
+		/*
+		* 分别获取 index type name 三个属性，
+		* 如果三个属性同时存在，那应该听谁的呢？？？？
+		* */
 		String indexAttr = ele.getAttribute(INDEX_ATTRIBUTE);
 		String typeAttr = ele.getAttribute(TYPE_ATTRIBUTE);
 		String nameAttr = ele.getAttribute(NAME_ATTRIBUTE);
+
+		/* 先根据 index 来判断*/
 		if (StringUtils.hasLength(indexAttr)) {
 			try {
 				int index = Integer.parseInt(indexAttr);
@@ -788,6 +842,10 @@ public class BeanDefinitionParserDelegate {
 				else {
 					try {
 						this.parseState.push(new ConstructorArgumentEntry(index));
+						/*
+						* 开始解析咯！！！
+						* 解析ele对应的属性元素
+						* */
 						Object value = parsePropertyValue(ele, bd, null);
 						ConstructorArgumentValues.ValueHolder valueHolder = new ConstructorArgumentValues.ValueHolder(value);
 						if (StringUtils.hasLength(typeAttr)) {
@@ -837,6 +895,7 @@ public class BeanDefinitionParserDelegate {
 	 * Parse a property element.
 	 */
 	public void parsePropertyElement(Element ele, BeanDefinition bd) {
+		/* 获取property中的name属性 */
 		String propertyName = ele.getAttribute(NAME_ATTRIBUTE);
 		if (!StringUtils.hasLength(propertyName)) {
 			error("Tag 'property' must have a 'name' attribute", ele);
@@ -844,10 +903,16 @@ public class BeanDefinitionParserDelegate {
 		}
 		this.parseState.push(new PropertyEntry(propertyName));
 		try {
+			/* 不允许多次对同一属性进行配置，如果已经存在同名的property属性，
+			* 那么久不解析了 */
 			if (bd.getPropertyValues().contains(propertyName)) {
 				error("Multiple 'property' definitions for property '" + propertyName + "'", ele);
 				return;
 			}
+			/*
+			* 此处用来解析property的值，返回的对象对应 bean 定义的 property 属性设置的解析结果，
+			* 这个解析结果会封装到PropertyValue对象中，然后设置到 BeanDefinitionHolder 中去
+			* */
 			Object val = parsePropertyValue(ele, bd, propertyName);
 			PropertyValue pv = new PropertyValue(propertyName, val);
 			parseMetaElements(ele, pv);
@@ -912,6 +977,18 @@ public class BeanDefinitionParserDelegate {
 				"<constructor-arg> element");
 
 		// Should only have one child element: ref, value, list, etc.
+		/*
+		*   <constructor-arg index="0" value="2">
+		*   	<list>
+		*   		<value>The Falling Star!</value>
+		*   	</list>
+		*   </constructor-arg>
+		*
+		*  这个构造方法中就有很多子元素，可以通过 ele.getChildNodes(); 获取
+		*
+		* 此方法除了解析 constructor-arg 之外，还可以解析 property 子元素
+		*
+		*/
 		NodeList nl = ele.getChildNodes();
 		Element subElement = null;
 		for (int i = 0; i < nl.getLength(); i++) {
@@ -927,15 +1004,23 @@ public class BeanDefinitionParserDelegate {
 				}
 			}
 		}
-
+		/*
+		* 解析 constructor-arg 上的 ref 属性
+		* */
 		boolean hasRefAttribute = ele.hasAttribute(REF_ATTRIBUTE);
+		/*
+		* 解析 constructor-arg 上的 value 属性
+		* */
 		boolean hasValueAttribute = ele.hasAttribute(VALUE_ATTRIBUTE);
+		/* 如果同时有用两种元素，则直接报错 */
 		if ((hasRefAttribute && hasValueAttribute) ||
 				((hasRefAttribute || hasValueAttribute) && subElement != null)) {
 			error(elementName +
 					" is only allowed to contain either 'ref' attribute OR 'value' attribute OR sub-element", ele);
 		}
-
+		/*
+		* 设置完 ref 或者 value 的值 之后就可以返回了
+		* */
 		if (hasRefAttribute) {
 			String refName = ele.getAttribute(REF_ATTRIBUTE);
 			if (!StringUtils.hasText(refName)) {
@@ -950,6 +1035,9 @@ public class BeanDefinitionParserDelegate {
 			valueHolder.setSource(extractSource(ele));
 			return valueHolder;
 		}
+		/*
+		* 如果没有 ref 或者 value， 解析子元素， 这里边就是各种乱七八糟的判断，考虑到子元素的各种情况
+		* */
 		else if (subElement != null) {
 			return parsePropertySubElement(subElement, bd);
 		}
@@ -1379,15 +1467,24 @@ public class BeanDefinitionParserDelegate {
 	 */
 	@Nullable
 	public BeanDefinition parseCustomElement(Element ele, @Nullable BeanDefinition containingBd) {
+		/*
+		* 先获取命名空间
+		* */
 		String namespaceUri = getNamespaceURI(ele);
 		if (namespaceUri == null) {
 			return null;
 		}
+		/*
+		* 根据命名空间找到对象的NamespaceHandler
+		* */
 		NamespaceHandler handler = this.readerContext.getNamespaceHandlerResolver().resolve(namespaceUri);
 		if (handler == null) {
 			error("Unable to locate Spring NamespaceHandler for XML schema namespace [" + namespaceUri + "]", ele);
 			return null;
 		}
+		/*
+		* 调用自定义的NamespaceHandler进行解析
+		* */
 		return handler.parse(ele, new ParserContext(this.readerContext, this, containingBd));
 	}
 
