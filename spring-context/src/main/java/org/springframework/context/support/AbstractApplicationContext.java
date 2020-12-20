@@ -576,7 +576,47 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			* beanFactory.setSerializationId(getId()); customizeBeanFactory(beanFactory);这两部是干什么？？？？？？？？？？？？？？？？
 			* 此方法调用时确保会有一个新的beanFactory，先close掉旧的，后创建新的。
 			* 然后加载bean的定义信息（BeanDefinition【应该就是XML中定义的那些bean的信息吧？】）
-			* */
+			*
+			* 1.
+			* 创建一个新的DefaultListableBeanFactory对象
+			* 设置了一些Aware接口的忽略
+			* 还设置了一些比较重要的属性值
+			* 比如：allowBeanDefinitionOverriding 和 allowCircularReference，
+			* 除了一些关键位置外，其余的还都是默认值
+			*
+			* 2.
+			* 创建完新的BeanFactory之后，为其指定了一个序列化ID
+			* 以便在之后的反序列时候通过这个ID直接得到Bean工厂对象
+			*
+			* 3.
+			* customizeBeanFactory定制化自己的工厂：
+			* 一个扩展点，重写这个方法就完了！！！！！！
+			*
+			* ==============================================================================================
+			* ==============================================================================================
+			* 4.============================================================================================
+			* 加载xml配置文件的，我们的bean定义信息需要从xml提取出来存进工厂类，
+			* loadBeanDefinitions()  方法重载好多次！！！！！！ ，String[]就是所有需要解析的XML文档的文件名
+			* 总的流程就是从 String[] -> String -> Resource[] -> Resource -> Document -> 然后解析 Document
+			* -> 解析成 BeanDefinition对象 -> 再把解析好的BeanDefinition包装成 BeanDefinitionHolder
+			* -> 注册进 BeanFactory
+			*
+			* Document的解析过程如下所示：
+			* 		4.0 Document 由输入流读入
+			* 		4.1 创建一个单独的解析器来进行一些解析处理工作 delegate
+			* 		4.2 查看输入输入流的标签是否是默认的命名空间中的元素，然后获取各个子标签
+			* 		4.3 开始解析原生标签（拿 <bean> 标签来说）
+			* 			4.3.1  解析得到 BeanDefinitionHolder  有完整beanDefinition定义信息的 beanName 和 别名
+			* 			4.3.2  向IOC容器注册解析到的 beanDefinition   将给定的beanDefinition注册到给定的bean工厂
+			* 		4.4 解析导入的标签
+			* 			4.4.1
+			* 		TODO 完成自定义标签的注释
+			*
+			* ==============================================================================================
+			* ==============================================================================================
+			* ==============================================================================================
+			* 5. 然后就可以进行实例化操作了
+			 * */
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
 			// Prepare the bean factory for use in this context.
@@ -788,6 +828,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void prepareBeanFactory(ConfigurableListableBeanFactory beanFactory) {
 		// Tell the internal bean factory to use the context's class loader etc.
+		/*
+		* 设置 beanFactory 的classLoader为当前的context的classLoader
+		* */
 		beanFactory.setBeanClassLoader(getClassLoader());
 		beanFactory.setBeanExpressionResolver(new StandardBeanExpressionResolver(beanFactory.getBeanClassLoader()));
 		beanFactory.addPropertyEditorRegistrar(new ResourceEditorRegistrar(this, getEnvironment()));

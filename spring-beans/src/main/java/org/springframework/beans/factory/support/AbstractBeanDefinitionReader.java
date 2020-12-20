@@ -212,7 +212,7 @@ public abstract class AbstractBeanDefinitionReader implements BeanDefinitionRead
 	 */
 	public int loadBeanDefinitions(String location, @Nullable Set<Resource> actualResources) throws BeanDefinitionStoreException {
 		/*
-		 * 这个东西就是一个 ClassPathXmlApplicationContext对象
+		 * resourceLoader 这个东西就是一个 ClassPathXmlApplicationContext对象
 		 * TODO 但是这个ClassPathXmlApplicationContext对象是什么时候赋值的呢
 		 * */
 		ResourceLoader resourceLoader = getResourceLoader();

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:sztu="http://www.guoxueyin.com/schema/gxy"
+
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.guoxueyin.com/schema/gxy http://www.guoxueyin.com/schema/gxy.xsd">
+
+	<sztu:gxy id="XueyinGuo" userName="Yanni" lovePerson="The Falling Star!"></sztu:gxy>
+</beans>

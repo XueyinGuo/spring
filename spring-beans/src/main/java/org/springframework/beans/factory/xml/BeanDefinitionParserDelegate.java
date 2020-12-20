@@ -1475,7 +1475,14 @@ public class BeanDefinitionParserDelegate {
 			return null;
 		}
 		/*
-		* 根据命名空间找到对象的NamespaceHandler
+		* ！！！！！！！！！！！！！！！！！！！
+		* ！！！！！！！！！！！！！！！！！！！
+		* 根据命名空间找到对象的 NamespaceHandler
+		*		这里根据 namespaceUri 去 META-INF的文件夹中获取spring.handlers的内容，获取对象的解析器
+		*
+		* resolve方法 就是 查找对应的 NamespaceHandler
+		* http\://www.guoxueyin.com/schema/gxy=com.sztu.spring.myselfargs.PersonNamespaceHandler
+		* 就是这一句定义的东西
 		* */
 		NamespaceHandler handler = this.readerContext.getNamespaceHandlerResolver().resolve(namespaceUri);
 		if (handler == null) {
@@ -1483,7 +1490,7 @@ public class BeanDefinitionParserDelegate {
 			return null;
 		}
 		/*
-		* 调用自定义的NamespaceHandler进行解析
+		* 调用自定义的 NamespaceHandler 进行解析
 		* */
 		return handler.parse(ele, new ParserContext(this.readerContext, this, containingBd));
 	}

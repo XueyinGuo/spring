@@ -167,6 +167,8 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 			* 用dtd文件格式还是用xsd文件格式对自己的xml进行验证
 			* 4.loadBeanDefinitions()  方法重载好多次！！！！！！ ，String[]就是所有需要解析的XML文档的文件名
 			* 总的流程就是从 String[] -> String -> Resource[] -> Resource -> Document -> BeanDefinition对象，
+			*
+			* TODO 为什么这里要把 String 转换成Resource数组呢
 			* */
 			loadBeanDefinitions(beanFactory);
 			this.beanFactory = beanFactory;

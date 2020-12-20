@@ -60,6 +60,10 @@ public abstract class AbstractBeanDefinitionParser implements BeanDefinitionPars
 	@Override
 	@Nullable
 	public final BeanDefinition parse(Element element, ParserContext parserContext) {
+		/*
+		* 解析完成后获取到 definition
+		* 在 parseInternal(element, parserContext); 中 我们可以重写 doParse(),实现自己的扩展逻辑
+		* */
 		AbstractBeanDefinition definition = parseInternal(element, parserContext);
 		if (definition != null && !parserContext.isNested()) {
 			try {
@@ -76,9 +80,18 @@ public abstract class AbstractBeanDefinitionParser implements BeanDefinitionPars
 						aliases = StringUtils.trimArrayElements(StringUtils.commaDelimitedListToStringArray(name));
 					}
 				}
+				/*
+				* 封装为 BeanDefinitionHolder
+				* */
 				BeanDefinitionHolder holder = new BeanDefinitionHolder(definition, id, aliases);
+				/*
+				* 封装完就可以注册了
+				* */
 				registerBeanDefinition(holder, parserContext.getRegistry());
 				if (shouldFireEvents()) {
+					/*
+					* 监听器进行处理
+					* */
 					BeanComponentDefinition componentDefinition = new BeanComponentDefinition(holder);
 					postProcessComponentDefinition(componentDefinition);
 					parserContext.registerComponent(componentDefinition);
