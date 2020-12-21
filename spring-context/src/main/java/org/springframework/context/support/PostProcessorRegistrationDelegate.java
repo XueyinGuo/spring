@@ -57,14 +57,31 @@ final class PostProcessorRegistrationDelegate {
 			ConfigurableListableBeanFactory beanFactory, List<BeanFactoryPostProcessor> beanFactoryPostProcessors) {
 
 		// Invoke BeanDefinitionRegistryPostProcessors first, if any.
+		/*
+		* 如果有 BeanDefinitionRegistryPostProcessors，则先处理这些，而且要把处理完的加入到 processedBeans 集合，防止重复处理
+		* */
 		Set<String> processedBeans = new HashSet<>();
-
+		/*
+		* 判断 beanFactory 是否实现了 BeanDefinitionRegistry 接口，beanFactory是DefaultListableFactory，实现了接口
+		*
+		* 这个if中先把实现了 BeanDefinitionRegistryPostProcessor 接口的 所有类的方法执行完
+		* */
 		if (beanFactory instanceof BeanDefinitionRegistry) {
 			BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
 			List<BeanFactoryPostProcessor> regularPostProcessors = new ArrayList<>();
 			List<BeanDefinitionRegistryPostProcessor> registryProcessors = new ArrayList<>();
-
+			/*
+			* 此处先判断 用户自己调用 addBeanFactoryPostProcessors() 加进来的
+			* */
 			for (BeanFactoryPostProcessor postProcessor : beanFactoryPostProcessors) {
+				/*
+				* 如果用户的 BeanFactoryPostProcessor 实现了  BeanDefinitionRegistryPostProcessor 接口
+				* 然后直接执行实现该接口时实现的方法 postProcessBeanDefinitionRegistry
+				* 执行完之后 把它放入到集合中，方便之后统一处理 postProcessBeanFactory 方法
+				*
+				* 如果用户没有实现 BeanDefinitionRegistryPostProcessor 接口，只实现了 BeanFactoryPostProcessor 接口，
+				* 则加入到另外的集合，方便之后统一调用 postProcessBeanFactory 方法
+				* */
 				if (postProcessor instanceof BeanDefinitionRegistryPostProcessor) {
 					BeanDefinitionRegistryPostProcessor registryProcessor =
 							(BeanDefinitionRegistryPostProcessor) postProcessor;
@@ -80,23 +97,55 @@ final class PostProcessorRegistrationDelegate {
 			// uninitialized to let the bean factory post-processors apply to them!
 			// Separate between BeanDefinitionRegistryPostProcessors that implement
 			// PriorityOrdered, Ordered, and the rest.
+			/*
+			* 外部的（用户自己添加的） PostProcessor 执行完毕之后，执行系统默认添加的一些 BDRPP，
+			* 而且这部分 BDRPP还是实现了 PriorityOrdered 接口的，这部分具有高优先级
+			* */
 			List<BeanDefinitionRegistryPostProcessor> currentRegistryProcessors = new ArrayList<>();
 
 			// First, invoke the BeanDefinitionRegistryPostProcessors that implement PriorityOrdered.
+			/*
+			* 此代码多次出现
+			* 是为了防止用户在定义的 BFPP或者BDRPP 中又产生新的 BFPP或者BDRPP
+			* */
 			String[] postProcessorNames =
 					beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
+
 			for (String ppName : postProcessorNames) {
+				/*
+				 * 打开 <context:component-scan base-package="com.sztu"></context:component-scan> 之后，
+				 * isTypeMatch(“internalConfigurationAnnotationProcessor”, PriorityOrdered.class) 方法执行时
+				 * org.springframework.context.annotation.internalConfigurationAnnotationProcessor 找不到任何匹配类之后
+				 * 直接 fallback 成 ConfigurationClassPostProcessor ， 然而 ConfigurationClassPostProcessor 实现了 PriorityOrdered
+				 * 所以判断为 true.
+				 * */
 				if (beanFactory.isTypeMatch(ppName, PriorityOrdered.class)) {
+					/*
+					* 获取到实现 BDRPP 和 PriorityOrdered 接口的 PostProcessorName之后，从getBean出发，创建出一个Bean对象之后
+					* 添加到 current 集合中，然后再把 该name加入到已经处理过的集合中
+					* */
 					currentRegistryProcessors.add(beanFactory.getBean(ppName, BeanDefinitionRegistryPostProcessor.class));
 					processedBeans.add(ppName);
 				}
 			}
+			/*
+			* 按照优先级排序完成之后，
+			* 再把current集合中的所有东西加入到 registryProcessors 集合中，
+			* 挨个执行 postProcessBeanDefinitionRegistry
+			* 清空current集合
+			* */
 			sortPostProcessors(currentRegistryProcessors, beanFactory);
 			registryProcessors.addAll(currentRegistryProcessors);
+			/*
+			* 打开 <context:component-scan base-package="com.sztu"></context:component-scan> 之后，这里会直接跳入 ConfigurationClassPostProcessor
+			* */
 			invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);
 			currentRegistryProcessors.clear();
 
 			// Next, invoke the BeanDefinitionRegistryPostProcessors that implement Ordered.
+			/*
+			* 此处开始处理实现了 BeanDefinitionRegistryPostProcessor 和 Ordered 两个接口的 PostProcessor
+			* */
 			postProcessorNames = beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
 			for (String ppName : postProcessorNames) {
 				if (!processedBeans.contains(ppName) && beanFactory.isTypeMatch(ppName, Ordered.class)) {
@@ -104,12 +153,21 @@ final class PostProcessorRegistrationDelegate {
 					processedBeans.add(ppName);
 				}
 			}
+			/*
+			* 按照优先级排序完成之后，
+			* 再把current集合中的所有东西加入到 registryProcessors 集合中，
+			* 挨个执行 postProcessBeanDefinitionRegistry
+			* 清空current集合
+			* */
 			sortPostProcessors(currentRegistryProcessors, beanFactory);
 			registryProcessors.addAll(currentRegistryProcessors);
 			invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);
 			currentRegistryProcessors.clear();
 
 			// Finally, invoke all other BeanDefinitionRegistryPostProcessors until no further ones appear.
+			/*
+			* 没有实现 Ordered 接口的类，排序完成之后执行 postProcessBeanDefinitionRegistry 方法
+			* */
 			boolean reiterate = true;
 			while (reiterate) {
 				reiterate = false;
@@ -128,6 +186,9 @@ final class PostProcessorRegistrationDelegate {
 			}
 
 			// Now, invoke the postProcessBeanFactory callback of all processors handled so far.
+			/*
+			* 执行 实现 BeanDefinitionRegistryPostProcessor 接口的 所有类的 postProcessBeanFactory 方法
+			* */
 			invokeBeanFactoryPostProcessors(registryProcessors, beanFactory);
 			invokeBeanFactoryPostProcessors(regularPostProcessors, beanFactory);
 		}
@@ -139,6 +200,10 @@ final class PostProcessorRegistrationDelegate {
 
 		// Do not initialize FactoryBeans here: We need to leave all regular beans
 		// uninitialized to let the bean factory post-processors apply to them!
+		/*
+		* 前一段代码执行完毕之后，现在只剩下 只实现 BeanFactoryPostProcessor 接口的类了
+		* 入参 beanFactoryPostProcessors（也就是用户自己add进来的） 和 BeanDefinitionRegistryPostProcessors已经全部处理完毕
+		* */
 		String[] postProcessorNames =
 				beanFactory.getBeanNamesForType(BeanFactoryPostProcessor.class, true, false);
 
@@ -148,6 +213,10 @@ final class PostProcessorRegistrationDelegate {
 		List<String> orderedPostProcessorNames = new ArrayList<>();
 		List<String> nonOrderedPostProcessorNames = new ArrayList<>();
 		for (String ppName : postProcessorNames) {
+			/*
+			* 遍历所有的 postProcessorNames ，没有执行过的分别加入到自己对应的集合中，
+			* 分别排序执行所有的 postProcessBeanFactory 方法
+			* */
 			if (processedBeans.contains(ppName)) {
 				// skip - already processed in first phase above
 			}

@@ -81,16 +81,33 @@ public class ComponentScanBeanDefinitionParser implements BeanDefinitionParser {
 	@Nullable
 	/*
 	* TODO 注解扫描包
+	* 遍历 base-package 中所有的 class 文件，选出标注了 @Component、@Service等注解的class文件
+	* 而且进行了 internal 的赋值操作
+	* 在这里进行了internal操作之后，后来去 执行 isTypeMatch()
+	* isTypeMatch(“internalConfigurationAnnotationProcessor”, PriorityOrdered.class) 方法执行时
+    * org.springframework.context.annotation.internalConfigurationAnnotationProcessor 找不到任何匹配类之后
+    * 直接 fallback 成 ConfigurationClassPostProcessor ， 然而 ConfigurationClassPostProcessor 实现了 PriorityOrdered
+    * 所以判断为 true.
 	* */
 	public BeanDefinition parse(Element element, ParserContext parserContext) {
+		/* 获取 <context:component-scan/> 的 base-package 属性 */
 		String basePackage = element.getAttribute(BASE_PACKAGE_ATTRIBUTE);
+		/* 解析占位符 */
 		basePackage = parserContext.getReaderContext().getEnvironment().resolvePlaceholders(basePackage);
 		String[] basePackages = StringUtils.tokenizeToStringArray(basePackage,
 				ConfigurableApplicationContext.CONFIG_LOCATION_DELIMITERS);
 
 		// Actually scan for bean definitions and register them.
 		ClassPathBeanDefinitionScanner scanner = configureScanner(parserContext, element);
+		/*
+		* 使用 scanner 在 base-package 中执行扫描，返回已经注册的bean定义信息
+		* 扫描的过程就是把 需要扫描的包下的所有文件遍历一遍
+		* */
 		Set<BeanDefinitionHolder> beanDefinitions = scanner.doScan(basePackages);
+		/*
+		* 注册组件！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+		*  internal 的赋值操作
+		* */
 		registerComponents(parserContext.getReaderContext(), beanDefinitions, element);
 
 		return null;
@@ -134,13 +151,17 @@ public class ComponentScanBeanDefinitionParser implements BeanDefinitionParser {
 		return new ClassPathBeanDefinitionScanner(readerContext.getRegistry(), useDefaultFilters,
 				readerContext.getEnvironment(), readerContext.getResourceLoader());
 	}
-
+	/*
+	* 在打开 <context:component-scan base-package="com.sztu"></context:component-scan>
+	* 之后在这里进行一系列的 internal 的赋值操作 AnnotationConfigUtils.registerAnnotationConfigProcessors()中完成
+	* */
 	protected void registerComponents(
 			XmlReaderContext readerContext, Set<BeanDefinitionHolder> beanDefinitions, Element element) {
 
 		Object source = readerContext.extractSource(element);
+		/* 使用注解的tagName和source构建 compositeComponentDefinition */
 		CompositeComponentDefinition compositeDef = new CompositeComponentDefinition(element.getTagName(), source);
-
+		/* 将所有扫描到的 beanDefinition 添加到 compositeDef 的 nestedComponents 中 */
 		for (BeanDefinitionHolder beanDefHolder : beanDefinitions) {
 			compositeDef.addNestedComponent(new BeanComponentDefinition(beanDefHolder));
 		}
@@ -152,6 +173,9 @@ public class ComponentScanBeanDefinitionParser implements BeanDefinitionParser {
 		}
 		if (annotationConfig) {
 			Set<BeanDefinitionHolder> processorDefinitions =
+					/*
+					*  internal 的赋值操作
+					* */
 					AnnotationConfigUtils.registerAnnotationConfigProcessors(readerContext.getRegistry(), source);
 			for (BeanDefinitionHolder processorDefinition : processorDefinitions) {
 				compositeDef.addNestedComponent(new BeanComponentDefinition(processorDefinition));

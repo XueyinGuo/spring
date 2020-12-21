@@ -3,7 +3,7 @@ package com.sztu.spring;
 import com.sztu.spring.myRegisterEditor.Star;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-public class Test {
+public class  Test02 {
 	public static void main(String[] args) {
 //		ClassPathXmlApplicationContext classPathXmlApplicationContext = new ClassPathXmlApplicationContext("gxy.xml");
 		ClassPathXmlApplicationContext classPathXmlApplicationContext = new ClassPathXmlApplicationContext("star.xml");

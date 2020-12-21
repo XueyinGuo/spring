@@ -78,11 +78,21 @@ class ConditionEvaluator {
 	 * @return if the item should be skipped
 	 */
 	public boolean shouldSkip(@Nullable AnnotatedTypeMetadata metadata, @Nullable ConfigurationPhase phase) {
+		/* metadata为空，或者 不存在 @Conditional 直接返回false */
 		if (metadata == null || !metadata.isAnnotated(Conditional.class.getName())) {
 			return false;
 		}
-
+		/* 采用递归的方式判断，第一次执行的时候phase为空，向下执行 */
 		if (phase == null) {
+			/*
+			* 下面的逻辑判断中，需要进入ConfigurationClassUtils.isConfigurationCandidate方法，主要逻辑是：
+			* 1.metadata是AnnotationMetadata类的一个实例
+			* 2.检查bean中是否使用 @Configuration 注解
+			* 3.检查bean是不是一个接口
+			* 4.检查bean中是否包含@Component @ComponentScan @Import @ImportResource中任意一个
+			* 5.检查bean中是否有@Bean注解
+			* 只要满足1,2 或者 1，3或者 1,4或者 1,5 就会递归
+			* */
 			if (metadata instanceof AnnotationMetadata &&
 					ConfigurationClassUtils.isConfigurationCandidate((AnnotationMetadata) metadata)) {
 				return shouldSkip(metadata, ConfigurationPhase.PARSE_CONFIGURATION);
@@ -93,11 +103,12 @@ class ConditionEvaluator {
 		List<Condition> conditions = new ArrayList<>();
 		for (String[] conditionClasses : getConditionClasses(metadata)) {
 			for (String conditionClass : conditionClasses) {
+				/* 获取到 @Conditional 注解后面的 Value 数组 */
 				Condition condition = getCondition(conditionClass, this.context.getClassLoader());
 				conditions.add(condition);
 			}
 		}
-
+		/* 简简单单排个序 */
 		AnnotationAwareOrderComparator.sort(conditions);
 
 		for (Condition condition : conditions) {
@@ -106,6 +117,14 @@ class ConditionEvaluator {
 				requiredPhase = ((ConfigurationCondition) condition).getConfigurationPhase();
 			}
 			if ((requiredPhase == null || requiredPhase == phase) && !condition.matches(this.context, metadata)) {
+				/*
+				* 逻辑是这样的的：
+				* 1. requiredPhase不是ConfigurationCondition的实力
+				* 2. phase==requiredPhase，
+				* 		从上数的递归可知：phase可为 ConfigurationPhase.PARSE_CONFIGURATION 或者 ConfigurationPhase.REGISTER_BEAN
+				* 3. condition.matches(this.context, metadata) 返回 false
+				* 如果 1,2 或者 1,3 成立，则在次函数的上层将阻断 bean 注入 Spring 容器
+				* */
 				return true;
 			}
 		}

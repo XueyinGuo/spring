@@ -1,5 +1,7 @@
 package com.sztu.spring;
 
+import com.sztu.spring.myRegisterEditor.MyEditorRegistrar;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -23,7 +25,16 @@ public class MyClassPathXmlApplicationContext extends ClassPathXmlApplicationCon
 	@Override
 	protected void customizeBeanFactory(DefaultListableBeanFactory beanFactory) {
 		super.setAllowBeanDefinitionOverriding(false);
+		/*
+		* 添加 BFPP 的一个办法
+		* */
+		super.addBeanFactoryPostProcessor(new MyBeanFactoryProcessor());
 		super.setAllowCircularReferences(false);
 		super.customizeBeanFactory(beanFactory);
+	}
+
+	@Override
+	protected void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
+		System.out.println("This is My Own postProcessBeanFactory()");
 	}
 }

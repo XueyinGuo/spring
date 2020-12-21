@@ -88,8 +88,13 @@ abstract class ConfigurationClassUtils {
 		if (className == null || beanDef.getFactoryMethodName() != null) {
 			return false;
 		}
-
+		/* 注解元数据可以理解成 注解和它的属性值 */
 		AnnotationMetadata metadata;
+		/*
+		* 通过注解注入的 beanDefinition 都是 AnnotatedBeanDefinition，实现了 AnnotatedBeanDefinition 接口
+		* Spring内部的 beanDefinition 都是 RootBeanDefinition，实现了 AbstractBeanDefinition
+		* 此处判断 beanDef 是否是 AnnotatedBeanDefinition 类型
+		* */
 		if (beanDef instanceof AnnotatedBeanDefinition &&
 				className.equals(((AnnotatedBeanDefinition) beanDef).getMetadata().getClassName())) {
 			// Can reuse the pre-parsed metadata from the given BeanDefinition...
@@ -99,6 +104,9 @@ abstract class ConfigurationClassUtils {
 			// Check already loaded Class if present...
 			// since we possibly can't even load the class file for this Class.
 			Class<?> beanClass = ((AbstractBeanDefinition) beanDef).getBeanClass();
+			/*
+			* 如果 beanDef 是 BFPP BPP AOP EventListenerFactory 则直接返回
+			* */
 			if (BeanFactoryPostProcessor.class.isAssignableFrom(beanClass) ||
 					BeanPostProcessor.class.isAssignableFrom(beanClass) ||
 					AopInfrastructureBean.class.isAssignableFrom(beanClass) ||
@@ -120,11 +128,12 @@ abstract class ConfigurationClassUtils {
 				return false;
 			}
 		}
-
+		/* 当前的 注解BeanDefinition 是否包含 @Configuration */
 		Map<String, Object> config = metadata.getAnnotationAttributes(Configuration.class.getName());
 		if (config != null && !Boolean.FALSE.equals(config.get("proxyBeanMethods"))) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_FULL);
 		}
+		/* 如果包含 @Bean @Component @ComponentScan @Import @ImportSource 注解，设置为 lite */
 		else if (config != null || isConfigurationCandidate(metadata)) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_LITE);
 		}

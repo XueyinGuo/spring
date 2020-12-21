@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+							http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<bean id="star" class="com.sztu.spring.myRegisterEditor.Star">
+		<property name="name" value="The Falling Star!"></property>
+		<property name="address" value="重庆市_重庆市_hd区_皓阳园_三号楼"></property>
+	</bean>
+
+	<bean class="org.springframework.beans.factory.config.CustomEditorConfigurer">
+		<property name="propertyEditorRegistrars">
+			<list>
+				<bean class="com.sztu.spring.myRegisterEditor.MyEditorRegistrar">
+
+				</bean>
+			</list>
+		</property>
+	</bean>
+
+	<context:component-scan base-package="com.sztu"></context:component-scan>
+</beans>
