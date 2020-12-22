@@ -179,7 +179,7 @@ class ConfigurationClassParser {
 		 * 5.处理 @ImportResource 引入的配置文件
 		 * 6.处理加了 @Bean 的方法
 		 * */
-		for (BeanDefinitionHolder holder : configCandidates) {
+ 		for (BeanDefinitionHolder holder : configCandidates) {
 			BeanDefinition bd = holder.getBeanDefinition();
 			try {
 				if (bd instanceof AnnotatedBeanDefinition) {
@@ -237,7 +237,7 @@ class ConfigurationClassParser {
 		if (this.conditionEvaluator.shouldSkip(configClass.getMetadata(), ConfigurationPhase.PARSE_CONFIGURATION)) {
 			return;
 		}
-		/* 处理当前类是否被其他类 Import 过 */
+		/*  处理当前类是否被其他类 Import 过 */
 		ConfigurationClass existingClass = this.configurationClasses.get(configClass);
 		if (existingClass != null) {
 			if (configClass.isImported()) {
@@ -287,12 +287,20 @@ class ConfigurationClassParser {
 	protected final SourceClass doProcessConfigurationClass(
 			ConfigurationClass configClass, SourceClass sourceClass, Predicate<String> filter)
 			throws IOException {
-		/*先处理内部类，处理内部类的最后 还是调用 doProcessConfigurationClass() 方法 */
+		/*
+		*当前类是否被 @Component 修饰
+		* @Configuration 继承了 @Component
+		* */
 		if (configClass.getMetadata().isAnnotated(Component.class.getName())) {
 			// Recursively process any member (nested) classes first
+			/*先处理内部类，处理内部类的最后 还是调用 doProcessConfigurationClass()方法，递归判断内部类是否还是有内部类，判断完内部类是否是 被注解修饰 */
 			processMemberClasses(configClass, sourceClass, filter);
 		}
-		/* 处理属性资源文件， 加了@PropertySource 的注解 */
+		/*
+		* 处理属性资源文件， 加了@PropertySource 的注解
+		* 加载配置，比如
+		* @PropertySource({"classpath：db.properties"})
+		*  */
 		// Process any @PropertySource annotations
 		for (AnnotationAttributes propertySource : AnnotationConfigUtils.attributesForRepeatable(
 				sourceClass.getMetadata(), PropertySources.class,
@@ -314,19 +322,26 @@ class ConfigurationClassParser {
 			for (AnnotationAttributes componentScan : componentScans) {
 				// The config class is annotated with @ComponentScan -> perform the scan immediately
 				/*
-				* 解析  @ComponentScan 和 @ComponentScans 的所有类， 扫描包下所有的 class文件，将其解析成 BeanDefinition
+				* 解析  @ComponentScan 和 @ComponentScans 的所有类，
+				* 扫描包下所有的 class文件，将其解析成 BeanDefinition
 				* */
 				Set<BeanDefinitionHolder> scannedBeanDefinitions =
 						this.componentScanParser.parse(componentScan, sourceClass.getMetadata().getClassName());
 				// Check the set of scanned definitions for any further config classes and parse recursively if needed
 				/*
-				* 上一步扫描解析出来的 bean 中 可能也添加了 @ComponentScan 和 @ComponentScans 两个注解，所以需要循环遍历一次，
+				* 上一步扫描解析出来的 bean 中 可能也添加了 @ComponentScan
+				* 和 @ComponentScans 两个注解，所以需要循环遍历一次，
 				* */
 				for (BeanDefinitionHolder holder : scannedBeanDefinitions) {
 					BeanDefinition bdCand = holder.getBeanDefinition().getOriginatingBeanDefinition();
 					if (bdCand == null) {
 						bdCand = holder.getBeanDefinition();
 					}
+					/*
+					* 判断是否是一个配置类，并设置 full 或者 lite 属性
+					* 如果是一个配置类，递归进行解析，
+					* 这是跨两个方法的递归，所以Idea并没有给出旋转标识
+					* */
 					if (ConfigurationClassUtils.checkConfigurationClassCandidate(bdCand, this.metadataReaderFactory)) {
 						parse(bdCand.getBeanClassName(), holder.getBeanName());
 					}
@@ -368,9 +383,16 @@ class ConfigurationClassParser {
 		}
 
 		// Process default methods on interfaces
+		/*
+		* 处理接口。从JDK8开始，接口中的方法可以有了自己的默认实现，因此涂过接口方法加了 @Bean注解
+		* 也需要被解析
+		* */
 		processInterfaces(configClass, sourceClass);
 
 		// Process superclass, if any
+		/*
+		* 接续父类，如果被解析的配置类继承了某个类，那么配置类的父类也会被解析
+		* */
 		if (sourceClass.getMetadata().hasSuperClass()) {
 			String superclass = sourceClass.getMetadata().getSuperClassName();
 			if (superclass != null && !superclass.startsWith("java") &&

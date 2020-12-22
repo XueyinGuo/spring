@@ -297,7 +297,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		* */
 		String[] candidateNames = registry.getBeanDefinitionNames();
 		/*
-		* 开始遍历所有要处理的 beanDefinition 名称
+		* 开始遍历所有要处理的 beanDefinition 名称，筛选备注解修饰的 beanDefinition
 		* */
 		for (String beanName : candidateNames) {
 			BeanDefinition beanDef = registry.getBeanDefinition(beanName);
@@ -318,7 +318,9 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 				configCandidates.add(new BeanDefinitionHolder(beanDef, beanName));
 			}
 		}
-
+		/*
+		* 之后的逻辑就是把 configCandidates 集合中类，开始解析这些类中的 注解中携带的参数进行解析
+		* */
 		// Return immediately if no @Configuration classes were found
 		if (configCandidates.isEmpty()) {
 			return;
@@ -326,7 +328,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
 		// Sort by previously determined @Order value, if applicable
 		/*
-		* @Configuration 是否 同时添加了 @Order，
+		* 按照Order值进行排序操作，然后按照优先级进行解析
 		* */
 		configCandidates.sort((bd1, bd2) -> {
 			int i1 = ConfigurationClassUtils.getOrder(bd1.getBeanDefinition());
@@ -338,6 +340,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		SingletonBeanRegistry sbr = null;
 		if (registry instanceof SingletonBeanRegistry) {
 			sbr = (SingletonBeanRegistry) registry;
+			/*设置beanName的一些操作，不太重要*/
 			if (!this.localBeanNameGeneratorSet) {
 				BeanNameGenerator generator = (BeanNameGenerator) sbr.getSingleton(
 						AnnotationConfigUtils.CONFIGURATION_BEAN_NAME_GENERATOR);

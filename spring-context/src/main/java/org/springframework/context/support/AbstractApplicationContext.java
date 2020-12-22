@@ -695,6 +695,10 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				 * 然后还会进行注解的处理工作，配置类的定义信息
 				 * */
 				/*
+				 * **********如果从配置文件读取的 beanDefinition，他的类型是 GenericBeanDefinition
+				 * **********如果是注解扫描到的 beanDefinition， 他的类型是 ScannedGenericBeanDefinition
+				 * **********ScannedGenericBeanDefinition 实现了 AnnotatedBeanDefinition
+				 *
 				 * 从标注了 @Component, @Repository, @Service, @Controller, @RestController, @ControllerAdvice, and
 				 * @Configuration 的 candidates 中解析 又标注了
 				 * @Import @ImportResource @ComponentScan @ComponentScans @Bean 的 */
