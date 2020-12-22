@@ -611,12 +611,21 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			* 		4.4 解析导入的标签
 			* 			4.4.1
 			* 		TODO 完成自定义标签的注释
-			*
+			* 5.如果打开了 <context:component-scan base-package="。。。"></context:component-scan>注解扫描
+			*  进行一些 internal 的赋值操作
+			*	    @Component, @Repository, @Service,
+			*       @Controller, @RestController, @ControllerAdvice, and @Configuration
+			*       将带有这些注解的类包装成 beanDefinition 放入 beanFactory
+			*       方便之后从 beanFactory 直接获取 然后更详细的解析！！！！！！！！！
+			*  org.springframework.context.annotation.internalConfigurationAnnotationProcessor 找不到任何匹配类之后
+			*  直接 fallback 成 ConfigurationClassPostProcessor ， 然而 ConfigurationClassPostProcessor 实现了 PriorityOrdered 和 BeanDefinitionRegistryPostProcessor
+			*  可以用 “org.springframework.context.annotation.internalConfigurationAnnotationProcessor” 获得到 ConfigurationClassPostProcessor的bean对象， 加入到集合中
+			*  所以之后可以执行 ConfigurationClassPostProcessor 类中的 processConfigBeanDefinitions() 的方法 使注解们得到更进一步的处理
 			* ==============================================================================================
 			* ==============================================================================================
 			* ==============================================================================================
-			* 5. 然后就可以进行实例化操作了
-			 * */
+			* 6. 然后就可以进行实例化操作了
+			* */
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
 			// Prepare the bean factory for use in this context.
@@ -646,6 +655,60 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				* 但是此方法必须在单例的实例化之前调用！！！！ 为什么要在单例的实例化之前调用？而不是所有的对象的实例化之前
 				* 难道说Spring的容器对象都是单例的吗？？？？？
 				* */
+				/*
+				 * 获取到当前应用程序上下文的 beanFactoryPostProcessors 变量的值。并且实例化调用执行所有的已经注册的 beanFactoryPostProcessor
+				 * 默认情况下通过 getBeanFactoryPostProcessors() 来获取已经注册的 BFPP ，但是默认是空的
+				 *
+				 * BeanFactoryPostProcessor
+				 *
+				 * BeanDefinitionRegistryPostProcessor
+				 *
+				 * 上边二者的关系是： BeanDefinitionRegistryPostProcessor 继承了 BeanFactoryPostProcessor 接口
+				 * 但是 BeanDefinitionRegistryPostProcessor 是操作 beanDefinition 的，
+				 * beanFactory 中有非常重要的两个集合 ： beanDefinitionMap 和 beanDefinitionNames
+				 *
+				 * BeanDefinitionRegistryPostProcessor 是对这两个集合的增删改查操作
+				 * 		void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry)
+				 * 		此方法是 BeanDefinitionRegistryPostProcessor中干活的方法，参数是一个 BeanDefinitionRegistry 类型
+				 *
+				 * BeanFactoryPostProcessor 中包含了 beanDefinition的两个集合
+				 * 		void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory)
+				 * 		此方法是 BeanFactoryPostProcessor 干活的方法， 可以做更多的操作！ 完成了 BeanDefinitionRegistry 之外的功能
+				 * */
+
+				/*
+				 * getBeanFactoryPostProcessors() 默认是空， 既然有get 那就肯定有set或者add
+				 * */
+				/*
+				 * invokeBeanFactoryPostProcessors() 的执行逻辑
+				 *
+				 * BeanDefinitionRegistryPostProcessor 继承了  BeanFactoryPostProcessor，
+				 * 所以 前者是后者的子集，处理逻辑是：
+				 * 1.先处理 getBeanFactoryPostProcessors() 方法 get 到的， 因为这部分是用户自己加进去的！
+				 * 		加的方式有两种： 1.在重写 customizeBeanFactory 方法的时候直接调用父类的 addBeanFactoryPostProcessor()，
+				 * 		   			  2.在配置文件中直接写一个 <bean>
+				 *
+				 * 2.再处理实现了 BeanDefinitionRegistryPostProcessor 接口的 PostProcessor类
+				 * 3.最后处理实现了 BeanFactoryPostProcessor 接口的类
+				 * */
+				/*
+				 * 然后还会进行注解的处理工作，配置类的定义信息
+				 * */
+				/*
+				 * 从标注了 @Component, @Repository, @Service, @Controller, @RestController, @ControllerAdvice, and
+				 * @Configuration 的 candidates 中解析 又标注了
+				 * @Import @ImportResource @ComponentScan @ComponentScans @Bean 的 */
+				/*
+				 * 经过一系列判断之后开始进行注解的处理工作
+				 * 1.先处理内部类，处理内部类的最后 还是调用 doProcessConfigurationClass() 方法
+				 * 2.处理属性资源文件， 加了@PropertySource 的注解
+				 * 3.处理@ComponentScan 或者 @ComponentScans 注解
+				 * 4.处理加了 @Import 的 bean，用了一个比较麻烦的方法 processImports()
+				 * 		4.1 遍历每个加了 @Import 的类
+				 * 		4.2 被import进来的类也可能加了 @Import，所以递归一下
+				 * 5.处理 @ImportResource 引入的配置文件
+				 * 6.处理加了 @Bean 的方法
+				 * */
 				invokeBeanFactoryPostProcessors(beanFactory);
 
 				// Register bean processors that intercept bean creation.
@@ -965,6 +1028,24 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		* 2.再处理实现了 BeanDefinitionRegistryPostProcessor 接口的 PostProcessor类
 		* 3.最后处理实现了 BeanFactoryPostProcessor 接口的类
 		* */
+		/*
+		 * 然后还会进行注解的处理工作，配置类的定义信息
+		 * */
+		/*
+		 * 从标注了 @Component, @Repository, @Service, @Controller, @RestController, @ControllerAdvice, and
+		 * @Configuration 的 candidates 中解析 又标注了
+		 * @Import @ImportResource @ComponentScan @ComponentScans @Bean 的 */
+		/*
+		 * 经过一系列判断之后开始进行注解的处理工作
+		 * 1.先处理内部类，处理内部类的最后 还是调用 doProcessConfigurationClass() 方法
+		 * 2.处理属性资源文件， 加了@PropertySource 的注解
+		 * 3.处理@ComponentScan 或者 @ComponentScans 注解
+		 * 4.处理加了 @Import 的 bean，用了一个比较麻烦的方法 processImports()
+		 * 		4.1 遍历每个加了 @Import 的类
+		 * 		4.2 被import进来的类也可能加了 @Import，所以递归一下
+		 * 5.处理 @ImportResource 引入的配置文件
+		 * 6.处理加了 @Bean 的方法
+		 * */
 		PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(beanFactory, getBeanFactoryPostProcessors());
 
 		// Detect a LoadTimeWeaver and prepare for weaving, if found in the meantime

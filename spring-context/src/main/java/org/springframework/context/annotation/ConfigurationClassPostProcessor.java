@@ -235,6 +235,21 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		/*
 		* 处理配置类的定义信息
 		* */
+		/*
+		 * 从标注了 @Component, @Repository, @Service, @Controller, @RestController, @ControllerAdvice, and
+		 * @Configuration 的 candidates 中解析 又标注了
+		 * @Import @ImportResource @ComponentScan @ComponentScans @Bean 的 */
+		/*
+		 * 经过一系列判断之后开始进行注解的处理工作
+		 * 1.先处理内部类，处理内部类的最后 还是调用 doProcessConfigurationClass() 方法
+		 * 2.处理属性资源文件， 加了@PropertySource 的注解
+		 * 3.处理@ComponentScan 或者 @ComponentScans 注解
+		 * 4.处理加了 @Import 的 bean，用了一个比较麻烦的方法 processImports()
+		 * 		4.1 遍历每个加了 @Import 的类
+		 * 		4.2 被import进来的类也可能加了 @Import，所以递归一下
+		 * 5.处理 @ImportResource 引入的配置文件
+		 * 6.处理加了 @Bean 的方法
+		 * */
 		processConfigBeanDefinitions(registry);
 	}
 
@@ -275,6 +290,11 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	* */
 	public void processConfigBeanDefinitions(BeanDefinitionRegistry registry) {
 		List<BeanDefinitionHolder> configCandidates = new ArrayList<>();
+		/*
+		* 先获取到标注了 @Component, @Repository, @Service,
+		*       @Controller, @RestController, @ControllerAdvice, and @Configuration 的BeanDefinition，然后进行后续处理，
+		* 标注了这些注解都是 candidate
+		* */
 		String[] candidateNames = registry.getBeanDefinitionNames();
 		/*
 		* 开始遍历所有要处理的 beanDefinition 名称
@@ -333,17 +353,32 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		}
 
 		// Parse each @Configuration class
-
+		/* 创建一个配置类的解析器 */
 		ConfigurationClassParser parser = new ConfigurationClassParser(
 				this.metadataReaderFactory, this.problemReporter, this.environment,
 				this.resourceLoader, this.componentScanBeanNameGenerator, registry);
 		/*
 		 * 创建两个集合，candidates 用于将之前加入的 configCandidates去重，
-		 * alreadyParsed判断是否已经解析过
+		 * alreadyParsed判断是否已经解析过，然后用配置类的解析器对注解进行进一步的解析工作，
 		 * */
 		Set<BeanDefinitionHolder> candidates = new LinkedHashSet<>(configCandidates);
 		Set<ConfigurationClass> alreadyParsed = new HashSet<>(configCandidates.size());
 		do {
+			/*
+			* 从标注了 @Component, @Repository, @Service, @Controller, @RestController, @ControllerAdvice, and
+			* @Configuration 的 candidates 中解析 又标注了
+			* @Import @ImportResource @ComponentScan @ComponentScans @Bean 的 */
+			/*
+			 * 经过一系列判断之后开始进行注解的处理工作
+			 * 1.先处理内部类，处理内部类的最后 还是调用 doProcessConfigurationClass() 方法
+			 * 2.处理属性资源文件， 加了@PropertySource 的注解
+			 * 3.处理@ComponentScan 或者 @ComponentScans 注解
+			 * 4.处理加了 @Import 的 bean，用了一个比较麻烦的方法 processImports()
+			 * 		4.1 遍历每个加了 @Import 的类
+			 * 		4.2 被import进来的类也可能加了 @Import，所以递归一下
+			 * 5.处理 @ImportResource 引入的配置文件
+			 * 6.处理加了 @Bean 的方法
+			 * */
 			parser.parse(candidates);
 			parser.validate();
 
