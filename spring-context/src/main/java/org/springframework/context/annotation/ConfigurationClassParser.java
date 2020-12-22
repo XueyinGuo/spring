@@ -234,6 +234,10 @@ class ConfigurationClassParser {
 
 
 	protected void processConfigurationClass(ConfigurationClass configClass, Predicate<String> filter) throws IOException {
+		/*
+		* shouldSkip()方法
+		* 在类上加有 @Conditional 注解的时候，进行一些条件判断看是否需要直接跳过
+		* */
 		if (this.conditionEvaluator.shouldSkip(configClass.getMetadata(), ConfigurationPhase.PARSE_CONFIGURATION)) {
 			return;
 		}
@@ -352,9 +356,15 @@ class ConfigurationClassParser {
 		// Process any @Import annotations
 		/*
 		* ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
-		* 处理加了 @Import 的bean， 这一步会将import注册的 bean变成 ConfigurationClass，不会变成 beanDefinition，
+		* getImports(sourceClass)，递归查找所有的 @Import 注解括号中的类
+		* 处理加了 @Import 的 bean， 这一步会将import注册的 bean变成 ConfigurationClass，不会变成 beanDefinition，
 		* 而是在 loadBeanDefinition() 方法中变成 BeanDefinition，再放入BeanDefinitionMap 中，
 		* Import类包含实现 ImportSelector的类或者 ImportBeanDefinitionRegistry 类 或者普通类
+		*
+		* processImports() 就是导入了一些额外的配置类，同时完成了这些配置类的实例化工作。如果配置类中还有 @Import，则递归找到所有的配置类
+		* 把一些实现了 DeferredImportSelector 接口的类放入到一个集合中，延后处理
+		*
+		* 此处也只是进行了一个实例化工作，没有任何进一步处理。 DeferredImportSelector 中也是只放了一些仅仅实例化的Selector
 		* */
 		processImports(configClass, sourceClass, getImports(sourceClass), filter, true);
 
@@ -578,6 +588,7 @@ class ConfigurationClassParser {
 	 * Returns {@code @Import} class, considering all meta-annotations.
 	 */
 	private Set<SourceClass> getImports(SourceClass sourceClass) throws IOException {
+		/* imports 存储 @Import() 括号中的类 */
 		Set<SourceClass> imports = new LinkedHashSet<>();
 		Set<SourceClass> visited = new LinkedHashSet<>();
 		collectImports(sourceClass, imports, visited);
@@ -599,7 +610,7 @@ class ConfigurationClassParser {
 	 */
 	private void collectImports(SourceClass sourceClass, Set<SourceClass> imports, Set<SourceClass> visited)
 			throws IOException {
-
+		/* 递归整个注解，把所有 @Import 注解中的值加入到 imports 集合*/
 		if (visited.add(sourceClass)) {
 			for (SourceClass annotation : sourceClass.getAnnotations()) {
 				String annName = annotation.getMetadata().getClassName();
@@ -655,6 +666,7 @@ class ConfigurationClassParser {
 					else if (candidate.isAssignable(ImportBeanDefinitionRegistrar.class)) {
 						// Candidate class is an ImportBeanDefinitionRegistrar ->
 						// delegate to it to register additional bean definitions
+						/* 进行实例化 */
 						Class<?> candidateClass = candidate.loadClass();
 						ImportBeanDefinitionRegistrar registrar =
 								ParserStrategyUtils.instantiateClass(candidateClass, ImportBeanDefinitionRegistrar.class,

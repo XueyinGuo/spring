@@ -58,6 +58,11 @@ import org.springframework.lang.Nullable;
  * @see ImportBeanDefinitionRegistrar
  * @see Configuration
  */
+/*
+* 此接口是Spring中导入外部配置的核心接口，根据给定的条件（通常是一个或者多个注解属性）判断要导入哪个配置类
+* 如果该接口的实现类同时实现了一些Aware接口，那么在调用selectImports方法之前先调用上述接口中的回调方法
+* 如果需要在所有的@Configuration处理完再倒入，可以实现DeferredImportSelector接口
+* */
 public interface ImportSelector {
 
 	/**
