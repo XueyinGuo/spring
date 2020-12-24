@@ -724,19 +724,40 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				 * */
 				registerBeanPostProcessors(beanFactory);
 
-				// Initialize message source for this context. i18n国际化的操作，暂时不用看。
+				// Initialize message source for this context.
+				/*
+				* i18n国际化的操作，暂时不用看。
+				* */
 				initMessageSource();
 
 				// Initialize event multicaster for this context. 初始化一个广播器
+				/*
+				* 初始化事件监听的多路广播器，使用了观察者模式，但是这个观察者模式跟普通的不一样：
+				* Spring把普通观察者模式进行了更细粒度的划分：事件的发布订阅模式
+				* 1.事件源：（类比气象站检测到数据变化）谁来调用或者执行发布具体的通知
+				* 2.多播器：（气象站检测到数据变化，遍历订阅者列表推送新的数据时候的 for 循环抽象出来了多播器）
+				* 		遍历的操作拿出来之后委托给一个多播器进行消息通知，或者通过观察者进行不同的操作
+				* 3.监听器：（各个订阅天气数据的用户）
+				* 		接受不同的事件来做不同的处理工作
+				* 4.事件： 被观察者具体执行的动作
+				*
+				* 执行过程：
+				* 事件源发布不同的事件，当发布之后会调用多播器的方法来进行事件的广播操作，由多播器出发具体的监听器的执行操作
+				* 监听器接收的具体事件之后，可以验证匹配是否能处理当前事件，可以的话直接处理，不能的话就不做操作
+				* */
 				initApplicationEventMulticaster();
 
 				// Initialize other special beans in specific context subclasses.
 				/*
 				* 模板模式，具体实现由子类去自己操控
+				* 留给子类初始化其他的Bean
 				* */
 				onRefresh();
 
 				// Check for listener beans and register them.注册监听器
+				/*
+				* 在所有注册的Bean中查找 listenerBean，注册到消息广播器中
+				* */
 				registerListeners();
 
 				// Instantiate all remaining (non-lazy-init) singletons.
@@ -1170,6 +1191,11 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void registerListeners() {
 		// Register statically specified listeners first.
+		/*
+		* 创建了
+		* applicationListenerBeans
+		* applicationListeners
+		* */
 		for (ApplicationListener<?> listener : getApplicationListeners()) {
 			getApplicationEventMulticaster().addApplicationListener(listener);
 		}
