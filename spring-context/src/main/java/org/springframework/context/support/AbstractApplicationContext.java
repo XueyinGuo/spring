@@ -765,6 +765,59 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				 * 创建对象的核心流程！！！！！！！！！！！！！！！！！
 				 * 创建剩下的单例对象，这些对象都是非懒加载的
 				 * */
+				/*
+				* 实现自定义的 Converter 只能继承三个接口，
+				* 如何添加自定义的 Converter，
+				* <bean id="studentConverter" class="com.sztu.spring.myConverter.StudentConverter"></bean>
+ 					<bean id="conversionService" class="org.springframework.context.support.ConversionServiceFactoryBean">
+					<property name="converters">
+						<set>
+							<ref bean="studentConverter"></ref>
+						</set>
+					</property>
+				  </bean>
+				* */
+				/*
+				 * 合并父类BeanDefinition
+				 * 一开始创建的BeanDefinition 都是属于两个类型 ： GenericBeanDefinition  RootBeanDefinition
+				 *
+				 * getMergedLocalBeanDefinition  就是要在实例化之前，把所有的基础的BeanDefinition对象转成RootBeanDefinition并进行缓存
+				 * 在后续马上进行实例化的时候直接获取定义信息，而定义信息中如果包含了父类，那么必须要先创建父类才能创建子类型
+				 * */
+				/*
+				 * 检查beanName对应的mergedBeanDefinition是否存在于缓存中，次缓存是在BeanFactoryPostProcessor中添加的
+				 * 所以是在哪里添加的呢？
+				 * 在invokeBeanFactoryPostProcessor()方法中的 beanFactory.getBeanNamesForType()!!!!!!!!!!!!!!!!!!
+				 * */
+				/* //判断Bean有没有实现FactoryBean接口
+				 * ======================================================================================
+				 * ======================================================================================
+				 * BeanFactory 和 FactoryBean 的区别： 他们都是工厂对象，都是用来创建对象的！！！！
+				 * 		1.如果使用 BeanFactory，那么必须遵守SpringBean的生命周期，从实例化到初始化，invokeAwareMethod
+				 * 			invokeInitMethod，before，after此流程，过程非常复杂
+				 * 		2.FactoryBean更加简单，
+				 * 			2.1 isSingleton()：判断是否单例，如果返回false，则getObject（）获取的对象不放入缓存 factoryBeanObjectCache
+				 * 			2.2 getObject()：直接返回对象
+				 * 			2.3 getObjectType():返回类型
+				 *
+				 * 我们在使用FactoryBean接口创建对象的时候，一共创建了两个对象：
+				 *  1.实现了factoryBean接口的子类对象   2.通过Object方法返回的对象
+				 * 两个对象都交给了Spring来管理
+				 * 虽然都交给了Spring管理，但是放的空间不是一个
+				 * factoryBean接口的子类对象放在了一级缓存，isSingleton()返回false的话，Spring就不管了，因为都不放入缓存了
+				 * （一级缓存：singletonObjects   二级缓存：earlySingletonObjects  三级缓存：singletonFactories）
+				 * 通过Object方法返回的对象 放在了 factoryBeanObjectCache 中
+				 * **************************************************************************************
+				 * ======================================================================================
+				 * */
+				/*
+				 * =============================================================================
+				 * bean = getObjectForBeanInstance(sharedInstance, name, beanName, null);
+				 * 返回对象实例！！！！！！
+				 * 如果是 FactoryBean 类型则简单设置一下就直接返回，
+				 * 如果是其他类型，则最终去调用 实现FactoryBean接口的子类中的 getObject() 方法返回对象实例
+				 * =============================================================================
+				 *  */
 				finishBeanFactoryInitialization(beanFactory);
 
 				// Last step: publish corresponding event.
@@ -1223,6 +1276,18 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void finishBeanFactoryInitialization(ConfigurableListableBeanFactory beanFactory) {
 		// Initialize conversion service for this context. 设置类型转换的操作
+		/*
+		* 实现自定义的 Converter 只能继承三个接口，
+		* 如何添加自定义的 Converter，
+		* <bean id="studentConverter" class="com.sztu.spring.myConverter.StudentConverter"></bean>
+ 			<bean id="conversionService" class="org.springframework.context.support.ConversionServiceFactoryBean">
+			<property name="converters">
+				<set>
+					<ref bean="studentConverter"></ref>
+				</set>
+			</property>
+		  </bean>
+		* */
 		if (beanFactory.containsBean(CONVERSION_SERVICE_BEAN_NAME) &&
 				beanFactory.isTypeMatch(CONVERSION_SERVICE_BEAN_NAME, ConversionService.class)) {
 			/*
@@ -1238,13 +1303,20 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		// (such as a PropertyPlaceholderConfigurer bean) registered any before:
 		// at this point, primarily for resolution in annotation attribute values.
 		/*
-		* 如果没有bean post-processor，给他一个默认的嵌入值处理器，比如 ${...}  (PropertyPlaceholderConfigurer)
+		* 如果没有值处理器，给他一个默认的嵌入值处理器，比如 ${...}  (PropertyPlaceholderConfigurer)
+		*
+		* <bean class="org.springframework.context.support.PropertySourcesPlaceholderConfigurer"></bean>
+		*
+		* invokeBeanFactoryPostProcessors(beanFactory);中进行内嵌值处理器的赋值操作
 		* */
 		if (!beanFactory.hasEmbeddedValueResolver()) {
 			beanFactory.addEmbeddedValueResolver(strVal -> getEnvironment().resolvePlaceholders(strVal));
 		}
 
 		// Initialize LoadTimeWeaverAware beans early to allow for registering their transformers early.
+		/*
+		* AOP 相关
+		* */
 		String[] weaverAwareNames = beanFactory.getBeanNamesForType(LoadTimeWeaverAware.class, false, false);
 		for (String weaverAwareName : weaverAwareNames) {
 			getBean(weaverAwareName);
@@ -1254,11 +1326,16 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		beanFactory.setTempClassLoader(null);
 
 		// Allow for caching all bean definition metadata, not expecting further changes.
+		/* 所有的beanDefinition已经全部加载完毕，不希望beanDefinition再有什么改变 */
 		beanFactory.freezeConfiguration();
 
 		// Instantiate all remaining (non-lazy-init) singletons.
 		/*
+		 * =================================================================================================
+		 * =================================================================================================
 		 * 创建对象的核心流程！！！！！！！！！！！！！！！！！
+		 * =================================================================================================
+		 * =================================================================================================
 		 * */
 		beanFactory.preInstantiateSingletons();
 	}

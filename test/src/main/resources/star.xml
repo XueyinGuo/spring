@@ -21,4 +21,15 @@
 	</bean>
 
 	<context:component-scan base-package="com.sztu"></context:component-scan>
+
+<!--	<bean id="studentConverter" class="com.sztu.spring.myConverter.StudentConverter"></bean>-->
+<!--	<bean id="conversionService" class="org.springframework.context.support.ConversionServiceFactoryBean">-->
+<!--		<property name="converters">-->
+<!--			<set>-->
+<!--				<ref bean="studentConverter"></ref>-->
+<!--			</set>-->
+<!--		</property>-->
+<!--	</bean>-->
+
+	<bean class="org.springframework.context.support.PropertySourcesPlaceholderConfigurer"></bean>
 </beans>

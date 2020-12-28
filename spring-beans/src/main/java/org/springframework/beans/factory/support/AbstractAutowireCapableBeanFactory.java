@@ -515,6 +515,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		try {
 			// Give BeanPostProcessors a chance to return a proxy instead of the target bean instance.
+			/* 给BeanPostProcessor一个机会返回一个代理来替代真正的实例 */
 			Object bean = resolveBeforeInstantiation(beanName, mbdToUse);
 			if (bean != null) {
 				return bean;
@@ -561,11 +562,14 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			throws BeanCreationException {
 
 		// Instantiate the bean.
+		/* beanWrapper 用来持有创建出来的 bean对象 */
 		BeanWrapper instanceWrapper = null;
 		if (mbd.isSingleton()) {
+			/* 如果是单例对象，从factoryBean实例缓存中移除当前的bean定义信息 */
 			instanceWrapper = this.factoryBeanInstanceCache.remove(beanName);
 		}
 		if (instanceWrapper == null) {
+			/* 执行bean对应的策略创建新的实例，比如工厂方法，构造函数主动注入或者简单初始化 */
 			instanceWrapper = createBeanInstance(beanName, mbd, args);
 		}
 		Object bean = instanceWrapper.getWrappedInstance();

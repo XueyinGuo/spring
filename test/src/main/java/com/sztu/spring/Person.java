@@ -5,6 +5,15 @@ public class Person {
 	private String lovePerson;
 	private String id;
 
+	public Person() {
+	}
+
+	public Person(String userName, String lovePerson, String id) {
+		this.userName = userName;
+		this.lovePerson = lovePerson;
+		this.id = id;
+	}
+
 	public String getId() {
 		return id;
 	}

@@ -491,15 +491,24 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 	@Override
 	public String[] getBeanNamesForType(@Nullable Class<?> type, boolean includeNonSingletons, boolean allowEagerInit) {
+		/* 配置还未被冻结 或者 类型为Null 或者 不允许早期初始化 */
 		if (!isConfigurationFrozen() || type == null || !allowEagerInit) {
 			return doGetBeanNamesForType(ResolvableType.forRawClass(type), includeNonSingletons, allowEagerInit);
 		}
+		/*
+		* 不管type是否不为空，allowEagerInit是否为true
+		* 只要 isConfigurationFrozen() 为 false 就一定不会走这里
+		* 因为 isConfigurationFrozen() 为 false的时候便是 BeanDefinition
+		* 可能还会发生更改和添加，所以不能进行缓存
+		* 如果允许非单例的bean，那么从保存所有bean的集合中获取，否则从单例bean中获取
+		*  */
 		Map<Class<?>, String[]> cache =
 				(includeNonSingletons ? this.allBeanNamesByType : this.singletonBeanNamesByType);
 		String[] resolvedBeanNames = cache.get(type);
 		if (resolvedBeanNames != null) {
 			return resolvedBeanNames;
 		}
+		/* 如果缓存中没有获取到，那么只能重新获取，获取到之后就存入缓存 */
 		resolvedBeanNames = doGetBeanNamesForType(ResolvableType.forRawClass(type), includeNonSingletons, true);
 		if (ClassUtils.isCacheSafe(type, getBeanClassLoader())) {
 			cache.put(type, resolvedBeanNames);
@@ -515,6 +524,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			// Only consider bean as eligible if the bean name is not defined as alias for some other bean.
 			if (!isAlias(beanName)) {
 				try {
+					/*
+					*
+					*  */
 					RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
 					// Only check bean definition if it is complete.
 					if (!mbd.isAbstract() && (allowEagerInit ||
@@ -868,16 +880,55 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 		// Iterate over a copy to allow for init methods which in turn register new bean definitions.
 		// While this may not be part of the regular factory bootstrap, it does otherwise work fine.
+		/* 将BeanDefinition的名字们创建成一个ArrayList */
 		List<String> beanNames = new ArrayList<>(this.beanDefinitionNames);
 
 		// Trigger initialization of all non-lazy singleton beans...
+		/* 触发所有的非延迟加载单例bean的初始化，遍历集合对象 */
 		for (String beanName : beanNames) {
+			/*
+			* 合并父类BeanDefinition
+			* 一开始创建的BeanDefinition 都是属于两个类型 ： GenericBeanDefinition  RootBeanDefinition
+			*
+			* getMergedLocalBeanDefinition  就是要在实例化之前，把所有的基础的BeanDefinition对象转成RootBeanDefinition并进行缓存
+			* 在后续马上进行实例化的时候直接获取定义信息，而定义信息中如果包含了父类，那么必须要先创建父类才能创建子类型
+			* */
+			/*
+			 * 检查beanName对应的mergedBeanDefinition是否存在于缓存中，次缓存是在BeanFactoryPostProcessor中添加的
+			 * 所以是在哪里添加的呢？
+			 * 在invokeBeanFactoryPostProcessor()方法中的 beanFactory.getBeanNamesForType()!!!!!!!!!!!!!!!!!!
+			 * */
 			RootBeanDefinition bd = getMergedLocalBeanDefinition(beanName);
+			/* 条件判断，抽象，单例，非懒加载 */
 			if (!bd.isAbstract() && bd.isSingleton() && !bd.isLazyInit()) {
-				if (isFactoryBean(beanName)) { //判断Bean有没有实现FactoryBean接口
+				/* //判断Bean有没有实现FactoryBean接口
+				* ======================================================================================
+				* ======================================================================================
+				* BeanFactory 和 FactoryBean 的区别： 他们都是工厂对象，都是用来创建对象的！！！！
+				* 		1.如果使用 BeanFactory，那么必须遵守SpringBean的生命周期，从实例化到初始化，invokeAwareMethod
+				* 			invokeInitMethod，before，after此流程，过程非常复杂
+				* 		2.FactoryBean更加简单，
+				* 			2.1 isSingleton()：判断是否单例
+				* 			2.2 getObject()：直接返回对象
+				* 			2.3 getObjectType():返回类型
+				*
+				* 我们在使用FactoryBean接口创建对象的时候，一共创建了两个对象：
+				*  1.实现了factoryBean接口的子类对象   2.通过Object方法返回的对象
+				* 两个对象都交给了Spring来管理
+				* 虽然都交给了Spring管理，但是放的空间不是一个
+				* factoryBean接口的子类对象放在了一级缓存
+				* （一级缓存：singletonObjects   二级缓存：earlySingletonObjects  三级缓存：singletonFactories）
+				* 通过Object方法返回的对象 放在了 factoryBeanObjectCache 中
+				* **************************************************************************************
+				* ======================================================================================
+				* */
+				if (isFactoryBean(beanName)) {
+					/* 根据 &beanName来获取具体的对象 */
 					Object bean = getBean(FACTORY_BEAN_PREFIX + beanName);
+					/* 进行类型转化 */
 					if (bean instanceof FactoryBean) {
 						FactoryBean<?> factory = (FactoryBean<?>) bean;
+						/* 是否需要加急处理 */
 						boolean isEagerInit;
 						if (System.getSecurityManager() != null && factory instanceof SmartFactoryBean) {
 							isEagerInit = AccessController.doPrivileged(
