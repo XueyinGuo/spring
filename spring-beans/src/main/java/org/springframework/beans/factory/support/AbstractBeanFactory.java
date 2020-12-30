@@ -282,7 +282,10 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				throw new BeanCurrentlyInCreationException(beanName);
 			}
 
-			// Check if bean definition exists in this factory. 获取父容器
+			// Check if bean definition exists in this factory.
+			/*
+			* 获取父容器
+			* */
 			BeanFactory parentBeanFactory = getParentBeanFactory();
 			if (parentBeanFactory != null && !containsBeanDefinition(beanName)) {
 				// Not found -> check parent.
@@ -320,6 +323,8 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				// Guarantee initialization of beans that the current bean depends on.
 				/*
 				* 如果存在依赖的bean的话  难么优先实例化依赖的bean
+				* 可以在配置文件中 depends-on 属性设置，
+				* 如果 dependsOn 不为空，则需要先把 依赖bean创建好
 				* */
 				String[] dependsOn = mbd.getDependsOn();
 				if (dependsOn != null) {
@@ -330,6 +335,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 						}
 						registerDependentBean(dep, beanName); //注册各个bean的依赖关系，方便进行销毁
 						try {
+							/*提前创建依赖的Bean*/
 							getBean(dep);
 						}
 						catch (NoSuchBeanDefinitionException ex) {
@@ -342,6 +348,9 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				// Create bean instance.
 				/* // 创建bean的实例对象 */
 				if (mbd.isSingleton()) {
+					/*
+					* ObjectFactory是一个函数式接口，当调用其中的getObject方法的时候，才会实际执行实际传递的匿名内部类中的逻辑
+					* */
 					sharedInstance = getSingleton(beanName, () -> {
 						try {
 							return createBean(beanName, mbd, args);
@@ -360,7 +369,13 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					* 返回一个具体的对象，如果一个Bean的实现了FactoryBean这个接口，它会创建两个对象：之前的流程都在创建 FactorBean
 					* 在此处调用getObject方法时才会返回自己的自定义对象
 					* */
-
+					/*
+					 * =============================================================================
+					 * 返回对象实例！！！！！！
+					 * 如果是 FactoryBean 类型则简单设置一下就直接返回，
+					 * 如果是其他类型，则最终去调用 实现FactoryBean接口的子类中的 getObject() 方法返回对象实例
+					 * =============================================================================
+					 *  */
 					bean = getObjectForBeanInstance(sharedInstance, name, beanName, mbd);
 				}
 
@@ -412,7 +427,10 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			}
 		}
 
-		// Check if required type matches the type of the actual bean instance. 检查需要的类型是否福哥Bean的实际类型
+		// Check if required type matches the type of the actual bean instance.
+		/*
+		* 检查需要的类型是否符合Bean的实际类型
+		* */
 		if (requiredType != null && !requiredType.isInstance(bean)) {
 			try {
 				T convertedBean = getTypeConverter().convertIfNecessary(bean, requiredType);
@@ -1317,6 +1335,11 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		* 在invokeBeanFactoryPostProcessor()方法中的 beanFactory.getBeanNamesForType()!!!!!!!!!!!!!!!!!!
 		* */
 		RootBeanDefinition mbd = this.mergedBeanDefinitions.get(beanName);
+		/*
+		* stale：中文 不新鲜的
+		* 目测：当之后对相应的BeanDefinition进行更新的时候，会把这个标志位设置为 true，即：已经不新鲜了
+		* 所以需要重新获取 此BeanDefinition
+		* */
 		if (mbd != null && !mbd.stale) {
 			/* 存在则直接返回 */
 			return mbd;
@@ -1514,14 +1537,27 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			throws CannotLoadBeanClassException {
 
 		try {
+			/*
+			* 有时候 beanClass 属性为字符串，   return (this.beanClass instanceof Class);  所以判断为false
+			* */
 			if (mbd.hasBeanClass()) {
 				return mbd.getBeanClass();
 			}
+			/*
+			* System.getSecurityManager() 是安全管理器，用来负责权限的事
+			* */
 			if (System.getSecurityManager() != null) {
+				/*
+				* AccessController.doPrivileged 是一个 native 方法，反正就是检测安全权限的
+				* */
 				return AccessController.doPrivileged((PrivilegedExceptionAction<Class<?>>)
 						() -> doResolveBeanClass(mbd, typesToMatch), getAccessControlContext());
 			}
 			else {
+				/*
+				* 如果我们没有额外的安全限制设置，则直接解析BeanClass，调用 ClassUtils.forName，
+				* 最终调用 Class.forName返回Class对象
+				* */
 				return doResolveBeanClass(mbd, typesToMatch);
 			}
 		}
@@ -1761,7 +1797,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	/**
 	 * Mark the specified bean as already created (or about to be created).
 	 * <p>This allows the bean factory to optimize its caching for repeated
-	 * creation of the specified bean.
+	  creation of the specified bean.
 	 * @param beanName the name of the bean
 	 */
 	protected void markBeanAsCreated(String beanName) {

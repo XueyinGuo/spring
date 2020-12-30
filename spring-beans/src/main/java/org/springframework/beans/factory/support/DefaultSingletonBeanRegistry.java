@@ -75,18 +75,36 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 
 
 	/** Cache of singleton objects: bean name to bean instance. */
+	/*
+	* 一级缓存，用于保存BeanName和创建的Bean实例之间的关系
+	* */
 	private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>(256);
 
 	/** Cache of singleton factories: bean name to ObjectFactory. */
+	/*
+	* 三级缓存
+	* 用于保存BeanName与创建的bean工厂之间的关系
+	* */
 	private final Map<String, ObjectFactory<?>> singletonFactories = new HashMap<>(16);
 
 	/** Cache of early singleton objects: bean name to bean instance. */
+	/*
+	* 二级缓存
+	* 保存BeanName和创建bean实例之间的关系，与SingletonFactories不同的地方在于 当一个单例bean被放到这里之后，
+	* 当bean还在创建过程中就可以通过getBean方法获取到，可以方便检测循环依赖
+	* */
 	private final Map<String, Object> earlySingletonObjects = new ConcurrentHashMap<>(16);
 
 	/** Set of registered singletons, containing the bean names in registration order. */
+	/*
+	* 用于保存所有当前已经注册的bean
+	* */
 	private final Set<String> registeredSingletons = new LinkedHashSet<>(256);
 
 	/** Names of beans that are currently in creation. */
+	/*
+	* 正在创建过程中的beanName集合
+	* */
 	private final Set<String> singletonsCurrentlyInCreation =
 			Collections.newSetFromMap(new ConcurrentHashMap<>(16));
 
@@ -229,7 +247,12 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 				if (logger.isDebugEnabled()) {
 					logger.debug("Creating shared instance of singleton bean '" + beanName + "'");
 				}
-				//记录当前对象的加载状态，创建一个集合对象，包含着我现在正在创建的对象们，拿过来直接用就可以？
+				/*
+				* 记录当前对象的加载状态，创建一个集合对象，包含着我现在正在创建的对象们，拿过来直接用就可以？
+				*
+				* this.singletonsCurrentlyInCreation.add(beanName)
+				* 表示当前对象正在被创建，记录这个东西很有用！！三级缓存有大用处！
+				* */
 				beforeSingletonCreation(beanName);
 				boolean newSingleton = false;
 				boolean recordSuppressedExceptions = (this.suppressedExceptions == null);
@@ -238,7 +261,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 				}
 				try {
 					/*
-					* 开始对象的创建，此处传进来的singletonFactory就是一个lamda表达式（相当于一个匿名内部类）
+					* 开始对象的创建，此处传进来的singletonFactory就是一个lambda表达式（相当于一个匿名内部类）
 					* getObject()方法是函数式接口的
 					* */
 					singletonObject = singletonFactory.getObject();

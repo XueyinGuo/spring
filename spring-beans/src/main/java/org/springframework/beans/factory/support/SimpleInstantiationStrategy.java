@@ -63,6 +63,12 @@ public class SimpleInstantiationStrategy implements InstantiationStrategy {
 		if (!bd.hasMethodOverrides()) {
 			Constructor<?> constructorToUse; //之前的构造器数组变成了构造器对象
 			synchronized (bd.constructorArgumentLock) {
+				/*
+				* bd.resolvedConstructorOrFactoryMethod 当做缓存使用，
+				* Person p1 =  ac.getBean(Person.class);
+				* Person p2 =  ac.getBean(Person.class);
+				* p2就不用再次解析一遍了，只解析第一次就够了
+				* */
 				constructorToUse = (Constructor<?>) bd.resolvedConstructorOrFactoryMethod;
 				if (constructorToUse == null) {
 					final Class<?> clazz = bd.getBeanClass();
@@ -84,10 +90,13 @@ public class SimpleInstantiationStrategy implements InstantiationStrategy {
 					}
 				}
 			}
+
 			return BeanUtils.instantiateClass(constructorToUse);
 		}
 		else {
 			// Must generate CGLIB subclass.
+			/* Lookup method
+			*  创建 CGLIB subclass ！！！！！！！！！！！！！！*/
 			return instantiateWithMethodInjection(bd, beanName, owner);
 		}
 	}

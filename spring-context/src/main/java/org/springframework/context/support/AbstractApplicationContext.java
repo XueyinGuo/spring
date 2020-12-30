@@ -762,9 +762,23 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 				// Instantiate all remaining (non-lazy-init) singletons.
 				/*
-				 * 创建对象的核心流程！！！！！！！！！！！！！！！！！
-				 * 创建剩下的单例对象，这些对象都是非懒加载的
-				 * */
+				* 创建对象的核心流程！！！！！！！！！！！！！！！！！
+				* 创建剩下的单例对象，这些对象都是非懒加载的
+				*
+				* 创建对象的五种方式：
+				* 1.自定义BeanPostProcessor，生成代理对象： resolveBeforeInstantiation包下的例子，就是 InstantiationAwareBeanPostProcessor
+				* 2.通过反射创建对象
+				* 3.通过FactoryMethod创建对象:
+				* 4.通过FactoryBean创建对象: getObject()   已经抽象成了接口规范，所有对象都需要用getObject方法获取
+				* 5.通过Supplier创建对象 ：
+				* 				本来我们可以直接反射拿到该对象，但是用Supplier的话需要在BeanFactoryPostProcessor中做一些操作,
+								操作的BeanDefinition，
+								BeanDefinition有两个主要的实现子类： GenericBeanDefinition， RootBeanDefinition
+								GenericBeanDefinition 继承了抽象类 AbstractBeanDefinition， 抽象类中有直接设置Supplier的方法，
+								所以Bean标签没转换成RootBeanDefinition之前就可以直接设置 Supplier
+
+								可以随便定义创建对象的方法，不止局限于getObject直接new，也可以在自己的逻辑中实现反射获取，或者工厂获取
+				* */
 				/*
 				* 实现自定义的 Converter 只能继承三个接口，
 				* 如何添加自定义的 Converter，
