@@ -173,8 +173,13 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 		Assert.notNull(singletonFactory, "Singleton factory must not be null");
 		synchronized (this.singletonObjects) {
 			if (!this.singletonObjects.containsKey(beanName)) {
-				this.singletonFactories.put(beanName, singletonFactory); //把调用时的匿名内部类（lambda表达式）放入三级缓存，但是我们为什么要有三级缓存呢？缓存是个什么东西呢
+				/*
+				* 把调用时的匿名内部类（lambda表达式）放入三级缓存
+				* */
+				this.singletonFactories.put(beanName, singletonFactory);
+				/* 二级缓存中移除 */
 				this.earlySingletonObjects.remove(beanName);
+				/* 添加到已注册 */
 				this.registeredSingletons.add(beanName);
 			}
 		}

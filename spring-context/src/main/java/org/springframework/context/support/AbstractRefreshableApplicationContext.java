@@ -294,7 +294,7 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 			beanFactory.setAllowBeanDefinitionOverriding(this.allowBeanDefinitionOverriding);
 		}
 		/*
-		* 如果属性allowCircularReferences不为空，设置给beanFactory对象相应的属性，是否允许bean之间存在循环依赖
+		* 如果属性allowCircularReferences不为空，设置给 beanFactory 对象相应的属性，是否允许bean之间存在循环依赖
 		*
 		*
 		* */
@@ -303,7 +303,7 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 		}
 		/*
 		* 虽然刚刚初始化完的而且设置完序列化ID的bean工厂已经被赋值为
-		* allowBeanDefinitionOverriding 和 allowCircularReferences都是true
+		* allowBeanDefinitionOverriding 和 allowCircularReferences 都是true
 		* 这些true都是默认的，如果我们在程序运行过程中不允许覆盖同名bean也不允许循环依赖
 		* 我们可以直接操作这个类中的这两个变量，把工厂的默认允许给覆盖掉，所以这又是Spring给我们留着的
 		* 一个扩展点，重写这个方法就完了！！！！！！

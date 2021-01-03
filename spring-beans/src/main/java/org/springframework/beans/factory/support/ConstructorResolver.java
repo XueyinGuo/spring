@@ -216,7 +216,9 @@ class ConstructorResolver {
 			int minTypeDiffWeight = Integer.MAX_VALUE;
 			Set<Constructor<?>> ambiguousConstructors = null;
 			LinkedList<UnsatisfiedDependencyException> causes = null;
-
+			/*
+			* 遍历取到的每个构造函数，即使已经找到合适的方法也仍要遍历全部，因为有可能存在构造函数重载的情况，
+			* */
 			for (Constructor<?> candidate : candidates) {
 				int parameterCount = candidate.getParameterCount();
 

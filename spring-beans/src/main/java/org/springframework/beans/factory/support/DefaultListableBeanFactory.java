@@ -1276,8 +1276,13 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	@Nullable
 	public Object resolveDependency(DependencyDescriptor descriptor, @Nullable String requestingBeanName,
 			@Nullable Set<String> autowiredBeanNames, @Nullable TypeConverter typeConverter) throws BeansException {
-
+		/*
+		* 获取工厂的参数名发现器，设置到 descriptor 中
+		* */
 		descriptor.initParameterNameDiscovery(getParameterNameDiscoverer());
+		/*
+		* 如果 descriptor 的依赖类型为 Optional类的时候，创建Optional类型的符合descriptor要求的Bean对象
+		* */
 		if (Optional.class == descriptor.getDependencyType()) {
 			return createOptionalDependency(descriptor, requestingBeanName);
 		}
@@ -1289,9 +1294,19 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			return new Jsr330Factory().createDependencyProvider(descriptor, requestingBeanName);
 		}
 		else {
+			/* 尝试获取延迟加载的代理对象
+			* 这是在干什么呢？
+			* 因为我们引入一个另外类的Bean对象的时候，另外的Bean可能是LazyInit的，所有有可能获取不到 */
 			Object result = getAutowireCandidateResolver().getLazyResolutionProxyIfNecessary(
 					descriptor, requestingBeanName);
 			if (result == null) {
+				/*
+				* ======================================================================================================
+				* ======================================================================================================
+				* 这里才是解析 descriptor 的依赖类型
+				* ======================================================================================================
+				* ======================================================================================================
+				* */
 				result = doResolveDependency(descriptor, requestingBeanName, autowiredBeanNames, typeConverter);
 			}
 			return result;
@@ -1301,14 +1316,14 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	@Nullable
 	public Object doResolveDependency(DependencyDescriptor descriptor, @Nullable String beanName,
 			@Nullable Set<String> autowiredBeanNames, @Nullable TypeConverter typeConverter) throws BeansException {
-
+		/* 获取新的切入点对象 */
 		InjectionPoint previousInjectionPoint = ConstructorResolver.setCurrentInjectionPoint(descriptor);
 		try {
 			Object shortcut = descriptor.resolveShortcut(this);
 			if (shortcut != null) {
 				return shortcut;
 			}
-
+			/* 获取descriptor 的依赖类型 */
 			Class<?> type = descriptor.getDependencyType();
 			Object value = getAutowireCandidateResolver().getSuggestedValue(descriptor);
 			if (value != null) {
@@ -1329,12 +1344,14 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 							converter.convertIfNecessary(value, type, descriptor.getMethodParameter()));
 				}
 			}
-
+			/*descriptor是否是 StreamDependencyDescriptor Array Collection Map 这些“多结果值类型” */
 			Object multipleBeans = resolveMultipleBeans(descriptor, beanName, autowiredBeanNames, typeConverter);
 			if (multipleBeans != null) {
 				return multipleBeans;
 			}
-
+			/*
+			* 终于开始找值类型了
+			* */
 			Map<String, Object> matchingBeans = findAutowireCandidates(beanName, type, descriptor);
 			if (matchingBeans.isEmpty()) {
 				if (isRequired(descriptor)) {
@@ -1345,7 +1362,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 			String autowiredBeanName;
 			Object instanceCandidate;
-
+			/* 获取到的合适的Bean是否大于1个 */
 			if (matchingBeans.size() > 1) {
 				autowiredBeanName = determineAutowireCandidate(matchingBeans, descriptor);
 				if (autowiredBeanName == null) {
@@ -1372,6 +1389,14 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				autowiredBeanNames.add(autowiredBeanName);
 			}
 			if (instanceCandidate instanceof Class) {
+				/*
+				* 如果解析到的 instanceCandidate 是一个 Class类型，
+				* 		比如：在@Controller 中 @Autowired 一个 Service 对象， @Service中有一个@Repository 的 Dao对象，
+				* 			这里在获取到 Service 对象的时候，直接去缓存中查找有没有 Service 类型的对象，如果有则获取，没有则创建
+				* 			在创建 service 时，有 Dao对象的类型，则继续队规创建
+				* 获取到这个类型对应的 Bean对象
+				* 里面调用了 getBean()
+				* */
 				instanceCandidate = descriptor.resolveCandidate(autowiredBeanName, type, this);
 			}
 			Object result = instanceCandidate;

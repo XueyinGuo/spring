@@ -453,6 +453,10 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	@Override
 	public boolean containsBean(String name) {
 		String beanName = transformedBeanName(name);
+		/*
+		* 一级缓存中有没有这个Bean，beanDefinitionMap中有没有这个
+		* 返回 beanName 是否以 & 开头和是不是 factoryBean
+		* */
 		if (containsSingleton(beanName) || containsBeanDefinition(beanName)) {
 			return (!BeanFactoryUtils.isFactoryDereference(name) || isFactoryBean(name));
 		}

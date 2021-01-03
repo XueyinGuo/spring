@@ -4,7 +4,11 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.PropertyValues;
 import org.springframework.beans.factory.config.InstantiationAwareBeanPostProcessor;
 import org.springframework.cglib.proxy.Enhancer;
-
+/*
+* 给BeanPostProcessor一个机会返回一个代理来替代真正的实例
+* 如果代理的bean不为空，则直接返回代理bean
+* 往下的 doCreateBean 也不用执行了
+* */
 public class MyInstantiationAwareBeanPostProcessor implements InstantiationAwareBeanPostProcessor {
 
 	/*

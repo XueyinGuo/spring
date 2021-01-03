@@ -157,7 +157,13 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 	static {
 		webServiceRefClass = loadAnnotationType("javax.xml.ws.WebServiceRef");
 		ejbClass = loadAnnotationType("javax.ejb.EJB");
-
+		/*
+		* 添加@Resource注解
+		* @Autowired ≈ @Resource
+		* （Spring）     (JDK)
+		*
+		* 还有 @PreDestroy  @PostConstruct 也是属于 JDK 的
+		* */
 		resourceAnnotationTypes.add(Resource.class);
 		if (webServiceRefClass != null) {
 			resourceAnnotationTypes.add(webServiceRefClass);
@@ -291,8 +297,18 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 
 	@Override
 	public void postProcessMergedBeanDefinition(RootBeanDefinition beanDefinition, Class<?> beanType, String beanName) {
+		/*
+		* 处理 @PostConstruct 和 @PreDestroy 注解
+		* */
 		super.postProcessMergedBeanDefinition(beanDefinition, beanType, beanName);
+		/*
+		* 处理 @Resource 注解
+		* */
 		InjectionMetadata metadata = findResourceMetadata(beanName, beanType, null);
+		/*
+		 * 上一步获取完 @Resource 方法之后，在这一步中完成把这些查找到的方法
+		 * 修改回BeanDefinition
+		 * */
 		metadata.checkConfigMembers(beanDefinition);
 	}
 
@@ -362,7 +378,10 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 
 		do {
 			final List<InjectionMetadata.InjectedElement> currElements = new ArrayList<>();
-
+			/*
+			* 查看
+			* ==属性==
+			* 上是否有 webService， ejb， Resource注解 */
 			ReflectionUtils.doWithLocalFields(targetClass, field -> {
 				if (webServiceRefClass != null && field.isAnnotationPresent(webServiceRefClass)) {
 					if (Modifier.isStatic(field.getModifiers())) {
@@ -385,7 +404,10 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 					}
 				}
 			});
-
+			/*
+			* ==方法==
+			* 上是否有 webService， ejb， Resource注解
+			* */
 			ReflectionUtils.doWithLocalMethods(targetClass, method -> {
 				Method bridgedMethod = BridgeMethodResolver.findBridgedMethod(method);
 				if (!BridgeMethodResolver.isVisibilityBridgeMethodPair(method, bridgedMethod)) {

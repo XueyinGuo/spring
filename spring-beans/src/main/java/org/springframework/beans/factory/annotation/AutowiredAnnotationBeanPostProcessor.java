@@ -159,6 +159,9 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 	 */
 	@SuppressWarnings("unchecked")
 	public AutowiredAnnotationBeanPostProcessor() {
+		/*
+		* @Autowired  @Value  @Inject
+		* */
 		this.autowiredAnnotationTypes.add(Autowired.class);
 		this.autowiredAnnotationTypes.add(Value.class);
 		try {
@@ -258,8 +261,8 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 	* 	1.如果有多个 Autowired，required为true，不管有没有默认构造方法，会报异常：
 	* 		 如果在多个构造方法上标注 Autowired，就会报错：Autowired already
 	* 	2.如果只有一个 Autowired，required为false，没有默认构造方法，会报警告
-TODO 	3.如果有没 Autowired注解，定义了两个及以上的有参数构造方法，没有无参构造方法，就会报错 ？？？（）
-*
+    *   3.如果有没 Autowired注解，定义了两个及以上的有参数构造方法，没有无参构造方法，
+    * 			且不是通过xml配置文件bean标签，而是通过@Component注解进行加载，就会报错  TODO ？？？
 	* 	4.其他情况都可以，但是有 Autowired 的构造方法优先，然后才是默认构造方法
 	* */
 	@Override
@@ -405,6 +408,7 @@ TODO 	3.如果有没 Autowired注解，定义了两个及以上的有参数构�
 	public PropertyValues postProcessProperties(PropertyValues pvs, Object bean, String beanName) {
 		InjectionMetadata metadata = findAutowiringMetadata(beanName, bean.getClass(), pvs);
 		try {
+			/* 进行属性注入 */
 			metadata.inject(bean, beanName, pvs);
 		}
 		catch (BeanCreationException ex) {
@@ -460,6 +464,10 @@ TODO 	3.如果有没 Autowired注解，定义了两个及以上的有参数构�
 					if (metadata != null) {
 						metadata.clear(pvs);
 					}
+					/*
+					* 跟刚才的 @Resource @PostConstruct @PreDestroy 逻辑一样
+					* 只不过这里把注解换成了 @Autowired 和 @Value
+					* */
 					metadata = buildAutowiringMetadata(clazz);
 					this.injectionMetadataCache.put(cacheKey, metadata);
 				}
@@ -469,6 +477,11 @@ TODO 	3.如果有没 Autowired注解，定义了两个及以上的有参数构�
 	}
 
 	private InjectionMetadata buildAutowiringMetadata(final Class<?> clazz) {
+		/*
+		* this.autowiredAnnotationTypes 中包含两个值  就是 Autowired 和 Value
+		* 但是又是哪里赋值的呢？
+		* 构造方法！！！！！！！！
+		* */
 		if (!AnnotationUtils.isCandidateClass(clazz, this.autowiredAnnotationTypes)) {
 			return InjectionMetadata.EMPTY;
 		}
@@ -478,21 +491,23 @@ TODO 	3.如果有没 Autowired注解，定义了两个及以上的有参数构�
 
 		do {
 			final List<InjectionMetadata.InjectedElement> currElements = new ArrayList<>();
-
+			/* 处理属性 */
 			ReflectionUtils.doWithLocalFields(targetClass, field -> {
 				MergedAnnotation<?> ann = findAutowiredAnnotation(field);
 				if (ann != null) {
+					/* @Autowired不支持静态 查看当前的变量是否是 static 的 */
 					if (Modifier.isStatic(field.getModifiers())) {
 						if (logger.isInfoEnabled()) {
 							logger.info("Autowired annotation is not supported on static fields: " + field);
 						}
 						return;
 					}
+					/* required 默认都是 true */
 					boolean required = determineRequiredStatus(ann);
 					currElements.add(new AutowiredFieldElement(field, required));
 				}
 			});
-
+			/* 处理方法 */
 			ReflectionUtils.doWithLocalMethods(targetClass, method -> {
 				Method bridgedMethod = BridgeMethodResolver.findBridgedMethod(method);
 				if (!BridgeMethodResolver.isVisibilityBridgeMethodPair(method, bridgedMethod)) {
@@ -500,6 +515,7 @@ TODO 	3.如果有没 Autowired注解，定义了两个及以上的有参数构�
 				}
 				MergedAnnotation<?> ann = findAutowiredAnnotation(bridgedMethod);
 				if (ann != null && method.equals(ClassUtils.getMostSpecificMethod(method, clazz))) {
+					/* @Autowired不支持静态 查看当前的变量是否是 static 的 */
 					if (Modifier.isStatic(method.getModifiers())) {
 						if (logger.isInfoEnabled()) {
 							logger.info("Autowired annotation is not supported on static methods: " + method);
@@ -519,6 +535,7 @@ TODO 	3.如果有没 Autowired注解，定义了两个及以上的有参数构�
 			});
 
 			elements.addAll(0, currElements);
+			/* 遍历父类 */
 			targetClass = targetClass.getSuperclass();
 		}
 		while (targetClass != null && targetClass != Object.class);
@@ -672,6 +689,9 @@ TODO 	3.如果有没 Autowired注解，定义了两个及以上的有参数构�
 				}
 			}
 			if (value != null) {
+				/*
+				* 通过反射，给属性赋值
+				* */
 				ReflectionUtils.makeAccessible(field);
 				field.set(bean, value);
 			}
