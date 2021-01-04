@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd">
+
+	<bean id="person" class="com.sztu.spring.populateBean.Person" autowire="byName">
+		<property name="id" value="1"></property>
+		<property name="gender" value="female"></property>
+		<property name="age" value="25"></property>
+	</bean>
+	<bean id="person2" class="com.sztu.spring.populateBean.Person" autowire="byType"></bean>
+
+	<bean id="address" class="com.sztu.spring.populateBean.Address">
+		<property name="province" value="TianJin"></property>
+		<property name="city" value="HeDong"></property>
+		<property name="town" value="SunCity"></property>
+	</bean>
+
+	<context:component-scan base-package="com.sztu.spring.populateBean.annotation"></context:component-scan>
+</beans>
