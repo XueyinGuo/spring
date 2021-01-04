@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd">
+
+
+
+	<!--	自定义属性解析器-->
+	<bean id="star" class="com.sztu.spring.myRegisterEditor.Star">
+		<property name="name" value="The Falling Star!"></property>
+		<property name="address" value="重庆市_重庆市_hd区_皓阳园_三号楼"></property>
+	</bean>
+
+	<bean class="org.springframework.beans.factory.config.CustomEditorConfigurer">
+		<property name="propertyEditorRegistrars">
+			<list>
+				<bean class="com.sztu.spring.myRegisterEditor.MyEditorRegistrar"></bean>
+			</list>
+		</property>
+	</bean>
+
+	<!--	注解扫描-->
+	<context:component-scan base-package="com.sztu"></context:component-scan>
+
+
+
+	<!--	为什么要重新在 invokeBeanFactoryPostProcessor 时要不断重新获取 -->
+	<bean class="com.sztu.spring.myBeanFactoryPostProcessor.MyBeanDefinitionRegistryProcessor"></bean>
+
+
+
+	<!--  自定义 Converter	-->
+	<bean id="studentConverter" class="com.sztu.spring.myConverter.StudentConverter"></bean>
+	<bean id="conversionService" class="org.springframework.context.support.ConversionServiceFactoryBean">
+		<property name="converters">
+			<set>
+				<ref bean="studentConverter"></ref>
+			</set>
+		</property>
+	</bean>
+
+	<bean class="org.springframework.context.support.PropertySourcesPlaceholderConfigurer"></bean>
+
+
+	<!-- 	LookupMethod	-->
+	<bean id="banana" class="com.sztu.spring.myLookupMethod.Banana"></bean>
+	<bean id="apple" class="com.sztu.spring.myLookupMethod.Apple"></bean>
+
+	<bean id="fruitPlate2" class="com.sztu.spring.myLookupMethod.FruitPlate">
+		<lookup-method name="getFruit" bean="apple" ></lookup-method>
+	</bean>
+
+	<bean id="fruitPlate1" class="com.sztu.spring.myLookupMethod.FruitPlate">
+		<lookup-method name="getFruit" bean="banana"></lookup-method>
+	</bean>
+
+
+	<!--	静态工厂的class可以直接写 PersonStaticFactory     -->
+	<bean id="person" class="com.sztu.spring.factoryMethod.PersonStaticFactory" factory-method="getPerson">
+		<constructor-arg value="Xue Yin Guo"></constructor-arg>
+	</bean>
+	<!--	如果没有静态工厂，则需要这样写配置文件-->
+	<bean id="personInstanceFactory" class="com.sztu.spring.factoryMethod.PersonInstanceFactory"></bean>
+
+	<bean id="person2" class="com.sztu.spring.factoryMethod.Person" factory-bean="personInstanceFactory" factory-method="getPerson">
+		<constructor-arg value="Ming Xian Song"></constructor-arg>
+	</bean>
+
+	<!--	FactoryBean -->
+	<bean id="myFactoryBean" class="com.sztu.spring.myFactoryBean.MyFactoryBean">
+	</bean>
+
+	<!--	使用 supplier 创建对象-->
+	<bean id="user" class="com.sztu.spring.supplier.User"></bean>
+	<bean class="com.sztu.spring.supplier.SupplierBeanFactoryPostProcessor"></bean>
+
+
+	<!--	创建Bean时 给对象一个机会返回代理对象 -->
+	<bean id="beforeInstantiation" class="com.sztu.spring.resolveBeforeInstantiation.BeforeInstantiation"></bean>
+
+	<bean id="myInstantiationAwareBeanPostProcessor" class="com.sztu.spring.resolveBeforeInstantiation.MyInstantiationAwareBeanPostProcessor"></bean>
+
+
+
+
+
+	<!--	属性注入 -->
+	<bean id="person" class="com.sztu.spring.populateBean.Person" autowire="byName">
+		<property name="id" value="1"></property>
+		<property name="gender" value="female"></property>
+		<property name="age" value="25"></property>
+	</bean>
+	<bean id="person2" class="com.sztu.spring.populateBean.Person" autowire="byType"></bean>
+
+	<bean id="address" class="com.sztu.spring.populateBean.Address">
+		<property name="province" value="TianJin"></property>
+		<property name="city" value="HeDong"></property>
+		<property name="town" value="SunCity"></property>
+	</bean>
+</beans>
