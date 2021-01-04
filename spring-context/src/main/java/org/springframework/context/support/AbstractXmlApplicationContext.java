@@ -98,7 +98,7 @@ public abstract class AbstractXmlApplicationContext extends AbstractRefreshableC
 		/*
 		* EntityResolver
 		* 解析XML文件之前，必须要知道这个XML整体的结构是什么样的，然鹅这个整体的结构是在xsd中存放，xsd中存规范了
-		* 接口的名称等信息，本地和互联网都有这些xsd文件，所以本类就是做一些加载这些xsd文件做一些解析工作
+		* 接口的名称等信息，本地和互联网都有这些xsd文件，所以本方法就是做一些加载这些xsd文件做一些解析工作
 		* */
 		/*
 		* 加载xsd，

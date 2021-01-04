@@ -228,8 +228,10 @@ public abstract class AbstractBeanDefinitionReader implements BeanDefinitionRead
 			// Resource pattern matching available.
 			try {
 				/*
-				 * 这里就把单个的String类型的XML文件读变成了一个Resource数组对象
+				 * 这里就把单个的String类型的XML文件读变成了一个Resource数组对象，为什么会是数组呢？
 				 * 在这个方法中我们会去做一些路径匹配的工作，比如classpath*:
+				 *
+				 * 我觉得是因为一个XML文件中有好多个标签，每个标签是个 Resource ！！！大错特错 艹 TODO  resources 到底什么情况下能是数组呢？？？？
 				 * */
 				Resource[] resources = ((ResourcePatternResolver) resourceLoader).getResources(location);
 				int count = loadBeanDefinitions(resources);

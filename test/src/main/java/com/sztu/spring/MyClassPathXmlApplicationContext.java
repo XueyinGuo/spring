@@ -18,7 +18,7 @@ public class MyClassPathXmlApplicationContext extends ClassPathXmlApplicationCon
 	 * 如果非得要有一个莫名其妙的参数，可以通过 -D参数指定， 比如 -D abc=def
 	 * */
 	protected void initPropertySources() {
-		this.getEnvironment().setRequiredProperties("abc");
+//		this.getEnvironment().setRequiredProperties("abc");
 
 	}
 

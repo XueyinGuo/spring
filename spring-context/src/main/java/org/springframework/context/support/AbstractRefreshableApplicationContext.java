@@ -281,7 +281,7 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 		/*
 		* 如果属性allowBeanDefinitionOverriding不为空，设置给beanFactory对象相应属性，是否允许覆盖同名称的不同定义的对象
 		*
-		* 比如两个在开发中用的很少的两个标签
+		* 比如两个在开发中用的很少的两个标签，
 		* <beans>
 		 	<bean id="person" class="com.sztu.spring.Person">
 		 		<lookup-method/>

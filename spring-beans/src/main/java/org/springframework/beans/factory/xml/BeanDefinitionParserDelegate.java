@@ -438,14 +438,14 @@ public class BeanDefinitionParserDelegate {
 
 		if (containingBean == null) {
 			/*
-			* 在一个配置文件中不能配置多个重名的bean对象
+			* 在一个配置文件中不能配置多个重名的bean对象，/* 如果名字没被用过，则把当前名字加入到已用集合，不让后来再用！别名也不能二次使用
 			* */
 			checkNameUniqueness(beanName, aliases, ele);
 		}
 		/*
 		* parseBeanDefinitionElement(ele, beanName, containingBean);
 		* 跟此时所处的方法的名字是一样的，但是这不是递归，这是又一次重载
-		* 这个方法存在的意义就是，我们的标签中不能只存在这么几个标签，还有剩余的更多的是
+		* 这个方法存在的意义就是，我们的标签中不能只存在这么几个属性，还有剩余的更多的是
 		* 比如 lazy-init  abstract  init-method  等等
 		*
 		* 此方法执行完之后，就已经是一个完整版的 beanDefinition 了，
@@ -508,7 +508,7 @@ public class BeanDefinitionParserDelegate {
 			error("Bean name '" + foundName + "' is already used in this <beans> element", beanElement);
 		}
 
-		this.usedNames.add(beanName);
+		this.usedNames.add(beanName); /* 如果名字没被用过，则把当前名字加入到已用集合，不让后来再用！别名也不能二次使用 */
 		this.usedNames.addAll(aliases);
 	}
 
@@ -550,9 +550,9 @@ public class BeanDefinitionParserDelegate {
 			/*
 			* 上一步创建完 BeanDefinition 之后， 下边设置各种属性值就完了
 			* */
-			/*解析bean标签的其他属性*/
+			/*解析bean标签的其他属性 */
 			parseBeanDefinitionAttributes(ele, beanName, containingBean, bd);
-			/*解析 description 属性*/
+			/*解析 description 属性   TODO 各种标签的作用 */
 			bd.setDescription(DomUtils.getChildElementValueByTagName(ele, DESCRIPTION_ELEMENT));
 			/*
 			* 解析元数据 ： 处理的元素就是 <meta> 标签
@@ -1482,7 +1482,7 @@ public class BeanDefinitionParserDelegate {
 		*
 		* resolve方法 就是 查找对应的 NamespaceHandler
 		* http\://www.guoxueyin.com/schema/gxy=com.sztu.spring.myselfargs.PersonNamespaceHandler
-		* 就是这一句定义的东西
+		* 就是这一句定义的东西,,通过反射生成 namespaceUri 对应的解析器： such as: context 的对应解析器
 		* */
 		NamespaceHandler handler = this.readerContext.getNamespaceHandlerResolver().resolve(namespaceUri);
 		if (handler == null) {
