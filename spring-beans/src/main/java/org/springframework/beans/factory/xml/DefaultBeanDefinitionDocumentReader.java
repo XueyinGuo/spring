@@ -202,7 +202,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 		if (delegate.isDefaultNamespace(root)) {
 			/*
 			* root就是<beans>
-			* nl 就是各种 里边的 <bean>
+			* nl 就是各种 里边的 <bean>    TODO nl是一堆什么玩意
 			* */
 			NodeList nl = root.getChildNodes();
 			for (int i = 0; i < nl.getLength(); i++) {

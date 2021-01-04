@@ -6,7 +6,11 @@
 
 
 
+<<<<<<< HEAD
 	<!--	自定义属性解析器-->
+=======
+<!--	自定义属性解析器-->
+>>>>>>> origin/master
 	<bean id="star" class="com.sztu.spring.myRegisterEditor.Star">
 		<property name="name" value="The Falling Star!"></property>
 		<property name="address" value="重庆市_重庆市_hd区_皓阳园_三号楼"></property>
@@ -20,7 +24,11 @@
 		</property>
 	</bean>
 
+<<<<<<< HEAD
 	<!--	注解扫描-->
+=======
+<!--	注解扫描-->
+>>>>>>> origin/master
 	<context:component-scan base-package="com.sztu"></context:component-scan>
 
 
@@ -30,7 +38,11 @@
 
 
 
+<<<<<<< HEAD
 	<!--  自定义 Converter	-->
+=======
+<!--  自定义 Converter	-->
+>>>>>>> origin/master
 	<bean id="studentConverter" class="com.sztu.spring.myConverter.StudentConverter"></bean>
 	<bean id="conversionService" class="org.springframework.context.support.ConversionServiceFactoryBean">
 		<property name="converters">
@@ -43,7 +55,11 @@
 	<bean class="org.springframework.context.support.PropertySourcesPlaceholderConfigurer"></bean>
 
 
+<<<<<<< HEAD
 	<!-- 	LookupMethod	-->
+=======
+<!-- 	LookupMethod	-->
+>>>>>>> origin/master
 	<bean id="banana" class="com.sztu.spring.myLookupMethod.Banana"></bean>
 	<bean id="apple" class="com.sztu.spring.myLookupMethod.Apple"></bean>
 
@@ -67,7 +83,11 @@
 		<constructor-arg value="Ming Xian Song"></constructor-arg>
 	</bean>
 
+<<<<<<< HEAD
 	<!--	FactoryBean -->
+=======
+<!--	FactoryBean -->
+>>>>>>> origin/master
 	<bean id="myFactoryBean" class="com.sztu.spring.myFactoryBean.MyFactoryBean">
 	</bean>
 
@@ -76,7 +96,11 @@
 	<bean class="com.sztu.spring.supplier.SupplierBeanFactoryPostProcessor"></bean>
 
 
+<<<<<<< HEAD
 	<!--	创建Bean时 给对象一个机会返回代理对象 -->
+=======
+<!--	创建Bean时 给对象一个机会返回代理对象 -->
+>>>>>>> origin/master
 	<bean id="beforeInstantiation" class="com.sztu.spring.resolveBeforeInstantiation.BeforeInstantiation"></bean>
 
 	<bean id="myInstantiationAwareBeanPostProcessor" class="com.sztu.spring.resolveBeforeInstantiation.MyInstantiationAwareBeanPostProcessor"></bean>

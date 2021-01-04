@@ -549,7 +549,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		try {
-			/* 实际创建bean
+			/*
+			* 实际创建bean
 			* ！！！！！！！！！！！！！！！！！！！！！！！！
 			* */
 			Object beanInstance = doCreateBean(beanName, mbdToUse, args);
@@ -634,7 +635,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			if (!mbd.postProcessed) {
 				try {
 					/*
-					* MergedBeanDefinitionPostProcessor 后置处理器修改合并Bean定义信息
+					* MergedBeanDefinitionPostProcessor 后置处理器修改合并 Bean定义信息
 					*
 					* @PostConstruct  @PreDestroy  @Resource 注解的处理
 					* 并把找到的方法们加入到对应的BeanDefinition的某个属性值中
