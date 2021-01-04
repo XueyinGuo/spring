@@ -8,8 +8,4 @@ public class AllInOneTest {
 //		MyClassPathXmlApplicationContext m2 = new MyClassPathXmlApplicationContext(new String[]{"AllInOne.xml", "beforeInstantiation.xml"});
 		MyClassPathXmlApplicationContext m3 = new MyClassPathXmlApplicationContext("AllInOne.xml");
 	}
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> origin/master

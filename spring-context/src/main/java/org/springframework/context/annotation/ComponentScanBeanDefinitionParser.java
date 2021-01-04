@@ -101,12 +101,12 @@ public class ComponentScanBeanDefinitionParser implements BeanDefinitionParser {
 		ClassPathBeanDefinitionScanner scanner = configureScanner(parserContext, element);
 		/*
 		* 使用 scanner 在 base-package 中执行扫描，返回已经注册的bean定义信息
-		* 扫描的过程就是把 需要扫描的包下的所有文件遍历一遍
+		* 扫描的过程就是把 需要扫描的包下的所有文件遍历一遍, 并把扫描到的注解包装成BeanDefinition注册进BeanFactory的BeanDefinitionMap等两个集合中 ，顺表处理@Lazy @Primary @DependsOn @Role @Description中注解中的属性值放入到BeanDefinition
 		* */
 		Set<BeanDefinitionHolder> beanDefinitions = scanner.doScan(basePackages);
 		/*
 		* 注册组件！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
-		*  internal 的赋值操作
+		*  internal 的赋值操作， internal所对应的这些东西也放入 BeanFactory的BeanDefinitionMap等两个集合中
 		* */
 		registerComponents(parserContext.getReaderContext(), beanDefinitions, element);
 
@@ -174,7 +174,7 @@ public class ComponentScanBeanDefinitionParser implements BeanDefinitionParser {
 		if (annotationConfig) {
 			Set<BeanDefinitionHolder> processorDefinitions =
 					/*
-					*  internal 的赋值操作
+					*  internal 的赋值操作， 并放进BeanDefinitionMap
 					* */
 					AnnotationConfigUtils.registerAnnotationConfigProcessors(readerContext.getRegistry(), source);
 			for (BeanDefinitionHolder processorDefinition : processorDefinitions) {

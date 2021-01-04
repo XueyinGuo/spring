@@ -6,6 +6,7 @@
 
 
 
+
 <!--	自定义属性解析器-->
 	<bean id="star" class="com.sztu.spring.myRegisterEditor.Star">
 		<property name="name" value="The Falling Star!"></property>
@@ -20,6 +21,7 @@
 		</property>
 	</bean>
 
+
 <!--	注解扫描-->
 	<context:component-scan base-package="com.sztu"></context:component-scan>
 
@@ -30,7 +32,9 @@
 
 
 
+
 <!--  自定义 Converter	-->
+
 	<bean id="studentConverter" class="com.sztu.spring.myConverter.StudentConverter"></bean>
 	<bean id="conversionService" class="org.springframework.context.support.ConversionServiceFactoryBean">
 		<property name="converters">
@@ -43,7 +47,9 @@
 	<bean class="org.springframework.context.support.PropertySourcesPlaceholderConfigurer"></bean>
 
 
+
 <!-- 	LookupMethod	-->
+
 	<bean id="banana" class="com.sztu.spring.myLookupMethod.Banana"></bean>
 	<bean id="apple" class="com.sztu.spring.myLookupMethod.Apple"></bean>
 
@@ -67,6 +73,7 @@
 		<constructor-arg value="Ming Xian Song"></constructor-arg>
 	</bean>
 
+
 <!--	FactoryBean -->
 	<bean id="myFactoryBean" class="com.sztu.spring.myFactoryBean.MyFactoryBean">
 	</bean>
@@ -76,7 +83,9 @@
 	<bean class="com.sztu.spring.supplier.SupplierBeanFactoryPostProcessor"></bean>
 
 
+
 <!--	创建Bean时 给对象一个机会返回代理对象 -->
+
 	<bean id="beforeInstantiation" class="com.sztu.spring.resolveBeforeInstantiation.BeforeInstantiation"></bean>
 
 	<bean id="myInstantiationAwareBeanPostProcessor" class="com.sztu.spring.resolveBeforeInstantiation.MyInstantiationAwareBeanPostProcessor"></bean>
