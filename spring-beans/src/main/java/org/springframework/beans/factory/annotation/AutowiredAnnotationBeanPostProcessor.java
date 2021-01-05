@@ -539,7 +539,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 			targetClass = targetClass.getSuperclass();
 		}
 		while (targetClass != null && targetClass != Object.class);
-
+		/* 遍历完之后统一注入 */
 		return InjectionMetadata.forElements(elements, clazz);
 	}
 

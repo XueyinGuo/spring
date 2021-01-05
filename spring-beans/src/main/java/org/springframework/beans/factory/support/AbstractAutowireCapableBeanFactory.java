@@ -776,7 +776,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			* 考虑到字符串和其他数据类型的特殊关系，假如我们在XML中定义一个 <bean id="" class="" name="1">的标签
 			* 那么name这个“1”到底应该作为 int 还是作为 String 呢？虽然可以指定类型，但是我们如果类型也不指定的话，那就需要考虑另外的一个问题
 			* 也就是类型转换！！！！！！
-			*
+			*								属性填充的时候如果有依赖的《Bean》也会顺便一块创建，比如往List、Map、Set等中设置Bean时！！
 			* ==========================================================================================================
 			* ==========================================================================================================
 			* ==========================================================================================================
@@ -1795,6 +1795,17 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		if (pvs != null) {
+			/*
+			*  <bean class="org.springframework.beans.factory.config.CustomEditorConfigurer">
+					<property name="propertyEditorRegistrars">
+						<list>
+							<bean class="com.sztu.spring.myRegisterEditor.MyEditorRegistrar"></bean>
+						</list>
+					</property>
+				</bean>
+
+				如果可以获取到property标签，则开始处理 property属性， 如果里边有各种依赖的其他Bean，在此步骤中创建
+			* */
 			applyPropertyValues(beanName, mbd, bw, pvs);
 		}
 	}

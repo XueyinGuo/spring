@@ -173,17 +173,17 @@ class BeanDefinitionValueResolver {
 		* */
 		else if (value instanceof ManagedList) {
 			// May need to resolve contained runtime references.
-			return resolveManagedList(argName, (List<?>) value);
+			return resolveManagedList(argName, (List<?>) value); /* List 中的 Bean 创建*/
 		}
 		else if (value instanceof ManagedSet) {
 			// May need to resolve contained runtime references.
-			return resolveManagedSet(argName, (Set<?>) value);
+			return resolveManagedSet(argName, (Set<?>) value); /* Set 中的 Bean 创建*/
 		}
 		else if (value instanceof ManagedMap) {
 			// May need to resolve contained runtime references.
-			return resolveManagedMap(argName, (Map<?, ?>) value);
+			return resolveManagedMap(argName, (Map<?, ?>) value); /* Map 中的 Bean 创建*/
 		}
-		else if (value instanceof ManagedProperties) {
+		else if (value instanceof ManagedProperties) {  /* Properties 中的 Bean 创建*/
 			Properties original = (Properties) value;
 			Properties copy = new Properties();
 			original.forEach((propKey, propValue) -> {
@@ -202,8 +202,14 @@ class BeanDefinitionValueResolver {
 			});
 			return copy;
 		}
-		else if (value instanceof TypedStringValue) {
+		else if (value instanceof TypedStringValue) {  /* Property中的值是普通的字符串的时候 */
 			// Convert value to target type here.
+			/*
+			*   <bean id="star" class="com.sztu.spring.myRegisterEditor.Star">
+					<property name="name" value="The Falling Star!"></property>
+					<property name="address" value="重庆市_重庆市_hd区_皓阳园_三号楼"></property>
+				</bean>
+			* */
 			TypedStringValue typedStringValue = (TypedStringValue) value;
 			Object valueObject = evaluate(typedStringValue);
 			try {
