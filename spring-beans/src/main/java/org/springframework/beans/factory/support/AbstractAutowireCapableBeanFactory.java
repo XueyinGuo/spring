@@ -638,7 +638,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 					* MergedBeanDefinitionPostProcessor 后置处理器修改合并 Bean定义信息
 					*
 					* @PostConstruct  @PreDestroy  @Resource 注解的处理
-					* 并把找到的方法们加入到对应的BeanDefinition的某个属性值中
+					* 并把找到的方法们加入到对应的BeanDefinition的某个属性值中，TODO 等待填充完属性和执行完所有的before after init 等方法之后调用？
 					* */
 					applyMergedBeanDefinitionPostProcessors(mbd, beanType, beanName);
 				}
@@ -2059,6 +2059,19 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		MutablePropertyValues mpvs = null;
+		/*
+		* 	<bean id="studentConverter" class="com.sztu.spring.myConverter.StudentConverter"></bean>
+
+			<bean id="conversionService" class="org.springframework.context.support.ConversionServiceFactoryBean">
+				<property name="converters">
+					<set>
+						<ref bean="studentConverter"></ref>
+					</set>
+				</property>
+			</bean>
+		*
+		* 用来存储 conversionService 中的 property属性
+		* */
 		List<PropertyValue> original;
 
 		if (pvs instanceof MutablePropertyValues) {
@@ -2074,6 +2087,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 							mbd.getResourceDescription(), beanName, "Error setting property values", ex);
 				}
 			}
+			/* 获取到property中的属性： */
 			original = mpvs.getPropertyValueList();
 		}
 		else {
@@ -2094,6 +2108,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				deepCopy.add(pv);
 			}
 			else {
+				/*
+				* 获取到 property 的属性名 和里边的内容 set集合 List Map等等
+				* */
 				String propertyName = pv.getName();
 				Object originalValue = pv.getValue();
 				if (originalValue == AutowiredPropertyMarker.INSTANCE) {

@@ -7,16 +7,11 @@ import org.springframework.core.convert.converter.GenericConverter;
 
 import java.util.Set;
 
-public class StudentConverter implements GenericConverter {
+public class StudentConverter implements ConverterFactory<Human, Student>{
 
 
 	@Override
-	public Set<ConvertiblePair> getConvertibleTypes() {
-		return null;
-	}
-
-	@Override
-	public Object convert(Object source, TypeDescriptor sourceType, TypeDescriptor targetType) {
+	public <T extends Student> Converter<Human, T> getConverter(Class<T> targetType) {
 		return null;
 	}
 }

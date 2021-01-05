@@ -21,6 +21,8 @@
 		</property>
 	</bean>
 
+<!-- 注册 customEditors	-->
+<!--	<bean class="com.sztu.spring.myCustomEditor.MyCustomEditorConfigurer"></bean>-->
 
 <!--	注解扫描-->
 	<context:component-scan base-package="com.sztu"></context:component-scan>
@@ -95,12 +97,12 @@
 
 
 	<!--	属性注入 -->
-	<bean id="person" class="com.sztu.spring.populateBean.Person" autowire="byName">
+	<bean id="person3" class="com.sztu.spring.populateBean.Person" autowire="byName">
 		<property name="id" value="1"></property>
 		<property name="gender" value="female"></property>
 		<property name="age" value="25"></property>
 	</bean>
-	<bean id="person2" class="com.sztu.spring.populateBean.Person" autowire="byType"></bean>
+	<bean id="person4" class="com.sztu.spring.populateBean.Person" autowire="byType"></bean>
 
 	<bean id="address" class="com.sztu.spring.populateBean.Address">
 		<property name="province" value="TianJin"></property>

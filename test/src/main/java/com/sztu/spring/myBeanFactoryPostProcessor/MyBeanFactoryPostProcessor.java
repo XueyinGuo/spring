@@ -25,4 +25,7 @@ public class MyBeanFactoryPostProcessor implements BeanFactoryPostProcessor {
 	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
 
 	}
+
+	public MyBeanFactoryPostProcessor() {
+	}
 }

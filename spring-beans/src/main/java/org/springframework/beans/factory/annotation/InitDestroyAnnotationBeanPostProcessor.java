@@ -247,7 +247,7 @@ public class InitDestroyAnnotationBeanPostProcessor
 				/*
 				* 当前方法是否是 @PostConstruct @PreDestroy 标注的方法，如果是 就添加到集合保存起来准备调用工作
 				*
-				* initAnnotationType 和 initAnnotationType 是在哪赋值的呢？
+				* initAnnotationType 和 destroyAnnotationType 是在哪赋值的呢？
 				*
 				* CommonAnnotationBeanPostProcessor的构造方法中对这两个变量赋值成对应的Class对象
 				* */

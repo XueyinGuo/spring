@@ -133,7 +133,10 @@ abstract class ConfigurationClassUtils {
 		if (config != null && !Boolean.FALSE.equals(config.get("proxyBeanMethods"))) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_FULL);
 		}
-		/* 如果包含 @Bean @Component @ComponentScan @Import @ImportSource 注解，设置为 lite */
+		/* 如果包含 @Bean @Component @ComponentScan @Import @ImportSource 注解，设置为 lite
+		* 	@Service 上标了 @Component， @Component 上有@Indexed，所以在 isConfigurationCandidate(metadata) 去检查的时候，
+		*   metadata.isAnnotated("@Component")时，这三个作为一组出现被检测
+		* */
 		else if (config != null || isConfigurationCandidate(metadata)) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_LITE);
 		}

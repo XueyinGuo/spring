@@ -363,6 +363,8 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 		*
 		* 解析完成之后 得到一个 有完整beanDefinition定义信息的 beanName 和 别名的  BeanDefinitionHolder
 		* 然后就可以进行注册了
+		*
+		* 这其中包含了所有的属性解析和子元素的解析  lazy-init  abstract  init-method
 		* */
 		BeanDefinitionHolder bdHolder = delegate.parseBeanDefinitionElement(ele);
 		if (bdHolder != null) {

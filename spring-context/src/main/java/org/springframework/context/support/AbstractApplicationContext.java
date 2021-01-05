@@ -1010,7 +1010,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		* */
 		beanFactory.addBeanPostProcessor(new ApplicationContextAwareProcessor(this));
 		/*
-		* 设置要忽略的自动装配接口
+		* 设置要忽略的自动装配接口  TODO ignoreDependencyInterface
 		* */
 		beanFactory.ignoreDependencyInterface(EnvironmentAware.class);
 		beanFactory.ignoreDependencyInterface(EmbeddedValueResolverAware.class);
@@ -1038,7 +1038,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 		// Detect a LoadTimeWeaver and prepare for weaving, if found.
 		/*
-		* 增加对AspectJ的支持，在Java中分为三种织入方式，编译期织入，类加载期织入，运行期织入，在编译器之日是指在Java编译时采用特殊的编译器，将
+		* 增加对AspectJ的支持，在Java中分为三种织入方式，编译期织入，类加载期织入，运行期织入，在编译器织入是指在Java编译时采用特殊的编译器，将
 		* 切面织入到Java类中，而类加载期织入是指类字节码加载到JVM时织入切面，运行期织入则是采用Cglib和JDK进行织入，
 		* aspectJ提供了两种织入方式，在编译期将aspectJ语言编写的切面类织入到Java类中，第二种是类加载期织入，
 		* 就是下面看到的这个 loadTimeWeaver
@@ -1116,7 +1116,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		* 1.先处理 getBeanFactoryPostProcessors() 方法 get 到的， 因为这部分是用户自己加进去的！
 		* 		加的方式有两种： 1.在重写 customizeBeanFactory 方法的时候直接调用父类的 addBeanFactoryPostProcessor()，
 		* 		   			  2.在配置文件中直接写一个 <bean>
-		*
+		*					  但是只有第一种可以被 getBeanFactoryPostProcessors() 获取到， 第二种是作为一个BeanDefinition存在于BeanDefinitionMap中
 		* 2.再处理实现了 BeanDefinitionRegistryPostProcessor 接口的 PostProcessor类
 		* 3.最后处理实现了 BeanFactoryPostProcessor 接口的类
 		* */
@@ -1137,6 +1137,14 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		 * 		4.2 被import进来的类也可能加了 @Import，所以递归一下
 		 * 5.处理 @ImportResource 引入的配置文件
 		 * 6.处理加了 @Bean 的方法
+		 * */
+		/*
+		 *
+		 * Supplier 的设置
+		 * BeanDefinition有两个主要的实现子类： GenericBeanDefinition， RootBeanDefinition
+		 *
+		 * GenericBeanDefinition 继承了抽象类 AbstractBeanDefinition， 抽象类中有直接设置 Supplier 的方法，
+		 * 所以Bean没转换成RootBeanDefinition之前就可以直接设置 Supplier
 		 * */
 		PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(beanFactory, getBeanFactoryPostProcessors());
 

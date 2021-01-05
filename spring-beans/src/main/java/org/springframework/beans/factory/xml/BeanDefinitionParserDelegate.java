@@ -449,7 +449,8 @@ public class BeanDefinitionParserDelegate {
 		* 比如 lazy-init  abstract  init-method  等等
 		*
 		* 此方法执行完之后，就已经是一个完整版的 beanDefinition 了，
-		* 就可以放进 beanFactory 中了，但是放进 beanDefinitionMap 中呢？？  还是放到 beanDefinitionNames 中呢？？？
+		*
+		* 这其中包含了所有的属性解析和子元素的解析
 		* */
 		AbstractBeanDefinition beanDefinition = parseBeanDefinitionElement(ele, beanName, containingBean);
 		if (beanDefinition != null) {
@@ -567,7 +568,16 @@ public class BeanDefinitionParserDelegate {
 			* 解析 构造函数 */
 			parseConstructorArgElements(ele, bd);
 
-			/*解析 property 子元素 */
+			/* 解析 property 子元素
+				 	<bean class="org.springframework.beans.factory.config.CustomEditorConfigurer">
+						<property name="propertyEditorRegistrars">
+							<list>
+								<bean class="com.sztu.spring.myRegisterEditor.MyEditorRegistrar"></bean>
+							</list>
+						</property>
+					</bean>
+			*
+			* */
 			parsePropertyElements(ele, bd);
 
 			/*解析 Qualifier 子元素*/

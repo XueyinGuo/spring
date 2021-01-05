@@ -312,7 +312,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			/*
 			* 判断当前的 beanDefinition 是否加了 @Configuration （优先级最高），
 			* 然后判断 是否被 @Bean @Component @ComponentScan @Import @ImportSource
-			* 是则添加到集合
+			* 是则添加到集合  @Service 上标了 @Component， @Component上有@Indexed
 			* */
 			else if (ConfigurationClassUtils.checkConfigurationClassCandidate(beanDef, this.metadataReaderFactory)) {
 				configCandidates.add(new BeanDefinitionHolder(beanDef, beanName));

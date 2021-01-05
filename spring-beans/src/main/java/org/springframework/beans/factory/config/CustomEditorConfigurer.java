@@ -147,6 +147,10 @@ public class CustomEditorConfigurer implements BeanFactoryPostProcessor, Ordered
 				beanFactory.addPropertyEditorRegistrar(propertyEditorRegistrar);
 			}
 		}
+
+		/*
+		* 继承 CustomEditorConfigurer，
+		* */
 		if (this.customEditors != null) {
 			this.customEditors.forEach(beanFactory::registerCustomEditor);
 		}

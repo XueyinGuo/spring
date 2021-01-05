@@ -16,7 +16,7 @@ public class SupplierBeanFactoryPostProcessor implements BeanFactoryPostProcesso
 		 * BeanDefinition有两个主要的实现子类： GenericBeanDefinition， RootBeanDefinition
 		 *
 		 * GenericBeanDefinition 继承了抽象类 AbstractBeanDefinition， 抽象类中有直接设置Supplier的方法，
-		 * 所以Bean标签没转换成RootBeanDefinition之前就可以直接设置 Supplier
+		 * 所以Bean没转换成RootBeanDefinition之前就可以直接设置 Supplier
 		 * */
 		GenericBeanDefinition userGenericBeanDefinition = (GenericBeanDefinition) userBeanDefinition;
 		userGenericBeanDefinition.setInstanceSupplier(CreateSupplier::createUser);
