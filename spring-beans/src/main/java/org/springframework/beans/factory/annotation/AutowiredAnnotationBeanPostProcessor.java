@@ -663,7 +663,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 				Assert.state(beanFactory != null, "No BeanFactory available");
 				TypeConverter typeConverter = beanFactory.getTypeConverter();
 				try {
-					value = beanFactory.resolveDependency(desc, beanName, autowiredBeanNames, typeConverter);
+					value = beanFactory.resolveDependency(desc, beanName, autowiredBeanNames, typeConverter); /* 解析 @Autowired 需要注入的值类型，并getBean() */
 				}
 				catch (BeansException ex) {
 					throw new UnsatisfiedDependencyException(null, beanName, new InjectionPoint(field), ex);
@@ -673,7 +673,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 						Object cachedFieldValue = null;
 						if (value != null || this.required) {
 							cachedFieldValue = desc;
-							registerDependentBeans(beanName, autowiredBeanNames);
+							registerDependentBeans(beanName, autowiredBeanNames); /* 缓存当前bean 的所需要注入的值类型 */
 							if (autowiredBeanNames.size() == 1) {
 								String autowiredBeanName = autowiredBeanNames.iterator().next();
 								if (beanFactory.containsBean(autowiredBeanName) &&

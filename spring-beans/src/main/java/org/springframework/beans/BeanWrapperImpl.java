@@ -216,7 +216,7 @@ public class BeanWrapperImpl extends AbstractNestablePropertyAccessor implements
 		if (td == null) {
 			td = cachedIntrospectionResults.addTypeDescriptor(pd, new TypeDescriptor(property(pd)));
 		}
-		return convertForProperty(propertyName, null, value, td);
+		return convertForProperty(propertyName, null, value, td); /* String解析成Address */
 	}
 
 	private Property property(PropertyDescriptor pd) {
@@ -329,7 +329,7 @@ public class BeanWrapperImpl extends AbstractNestablePropertyAccessor implements
 			}
 			else {
 				ReflectionUtils.makeAccessible(writeMethod);
-				writeMethod.invoke(getWrappedInstance(), value);
+				writeMethod.invoke(getWrappedInstance(), value);  /* 通过反射调用 set方法 为属性赋值 */
 			}
 		}
 	}

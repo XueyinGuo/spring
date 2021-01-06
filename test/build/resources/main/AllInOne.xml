@@ -52,8 +52,8 @@
 
 <!-- 	LookupMethod	-->
 
-	<bean id="banana" class="com.sztu.spring.myLookupMethod.Banana"></bean>
-	<bean id="apple" class="com.sztu.spring.myLookupMethod.Apple"></bean>
+	<bean id="banana" class="com.sztu.spring.myLookupMethod.Banana" scope="singleton"></bean>
+	<bean id="apple" class="com.sztu.spring.myLookupMethod.Apple" scope="prototype"></bean>
 
 	<bean id="fruitPlate2" class="com.sztu.spring.myLookupMethod.FruitPlate">
 		<lookup-method name="getFruit" bean="apple" ></lookup-method>
@@ -65,7 +65,7 @@
 
 
 	<!--	静态工厂的class可以直接写 PersonStaticFactory     -->
-	<bean id="person" class="com.sztu.spring.factoryMethod.PersonStaticFactory" factory-method="getPerson">
+	<bean id="personStaticFactory" class="com.sztu.spring.factoryMethod.PersonStaticFactory" factory-method="getPerson">
 		<constructor-arg value="Xue Yin Guo"></constructor-arg>
 	</bean>
 	<!--	如果没有静态工厂，则需要这样写配置文件-->

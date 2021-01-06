@@ -263,7 +263,7 @@ public abstract class AbstractNestablePropertyAccessor extends AbstractPropertyA
 			if (nestedPa == this) {
 				pv.getOriginalPropertyValue().resolvedTokens = tokens;
 			}
-			nestedPa.setPropertyValue(tokens, pv);
+			nestedPa.setPropertyValue(tokens, pv); /* 获取相应的属性值，并对象赋值 */
 		}
 		else {
 			setPropertyValue(tokens, pv);
@@ -275,7 +275,7 @@ public abstract class AbstractNestablePropertyAccessor extends AbstractPropertyA
 			processKeyedProperty(tokens, pv);
 		}
 		else {
-			processLocalProperty(tokens, pv);
+			processLocalProperty(tokens, pv); /* 获取相应的属性值，并对象赋值 */
 		}
 	}
 
@@ -436,7 +436,7 @@ public abstract class AbstractNestablePropertyAccessor extends AbstractPropertyA
 			Object valueToApply = originalValue;
 			if (!Boolean.FALSE.equals(pv.conversionNecessary)) {
 				if (pv.isConverted()) {
-					valueToApply = pv.getConvertedValue();
+					valueToApply = pv.getConvertedValue();  /* 获取相应的属性值，准备进行给对象赋值 */
 				}
 				else {
 					if (isExtractOldValueForEditor() && ph.isReadable()) {
@@ -458,7 +458,7 @@ public abstract class AbstractNestablePropertyAccessor extends AbstractPropertyA
 				}
 				pv.getOriginalPropertyValue().conversionNecessary = (valueToApply != originalValue);
 			}
-			ph.setValue(valueToApply);
+			ph.setValue(valueToApply); /* 进行赋值操作 */
 		}
 		catch (TypeMismatchException ex) {
 			throw ex;
@@ -585,7 +585,7 @@ public abstract class AbstractNestablePropertyAccessor extends AbstractPropertyA
 
 		Assert.state(this.typeConverterDelegate != null, "No TypeConverterDelegate");
 		try {
-			return this.typeConverterDelegate.convertIfNecessary(propertyName, oldValue, newValue, requiredType, td);
+			return this.typeConverterDelegate.convertIfNecessary(propertyName, oldValue, newValue, requiredType, td); /* String解析成Address */
 		}
 		catch (ConverterNotFoundException | IllegalStateException ex) {
 			PropertyChangeEvent pce =
@@ -604,7 +604,7 @@ public abstract class AbstractNestablePropertyAccessor extends AbstractPropertyA
 			String propertyName, @Nullable Object oldValue, @Nullable Object newValue, TypeDescriptor td)
 			throws TypeMismatchException {
 
-		return convertIfNecessary(propertyName, oldValue, newValue, td.getType(), td);
+		return convertIfNecessary(propertyName, oldValue, newValue, td.getType(), td); /* String解析成Address */
 	}
 
 	@Override

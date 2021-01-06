@@ -267,6 +267,11 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			* 返回对象实例！！！！！！
 			* 如果是 FactoryBean 类型则简单设置一下就直接返回，
 			* 如果是其他类型，则最终去调用 实现FactoryBean接口的子类中的 getObject() 方法返回对象实例
+			*
+			* 1.如果传入 &myFactoryBean，则 name = &myFactoryBean， beanName = myFactoryBean
+			* 2.如果传入 myFactoryBean，则 name = myFactoryBean， beanName = myFactoryBean
+			*
+			* 1是获取myFactoryBean本身，2是想获取myFactoryBean -> getObject() 方法返回的值，就是新创建的对象
 			* =============================================================================
 			*  */
 			bean = getObjectForBeanInstance(sharedInstance, name, beanName, null);

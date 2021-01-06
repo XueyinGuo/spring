@@ -152,7 +152,7 @@ class TypeConverterDelegate {
 			if (editor == null) {
 				editor = findDefaultEditor(requiredType);
 			}
-			convertedValue = doConvertValue(oldValue, convertedValue, requiredType, editor);
+			convertedValue = doConvertValue(oldValue, convertedValue, requiredType, editor); /* String解析成Address */
 		}
 
 		boolean standardConversion = false;
@@ -399,7 +399,7 @@ class TypeConverterDelegate {
 					logger.trace("Converting String to [" + requiredType + "] using property editor [" + editor + "]");
 				}
 				String newTextValue = (String) convertedValue;
-				return doConvertTextValue(oldValue, newTextValue, editor);
+				return doConvertTextValue(oldValue, newTextValue, editor);  /* String解析成Address */
 			}
 			else if (String.class == requiredType) {
 				returnValue = convertedValue;
@@ -426,7 +426,7 @@ class TypeConverterDelegate {
 			}
 			// Swallow and proceed.
 		}
-		editor.setAsText(newTextValue);
+		editor.setAsText(newTextValue);  /* String解析成Address */
 		return editor.getValue();
 	}
 

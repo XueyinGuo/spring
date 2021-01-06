@@ -213,13 +213,13 @@ public class InitDestroyAnnotationBeanPostProcessor
 			return buildLifecycleMetadata(clazz);
 		}
 		// Quick check on the concurrent map first, with minimal locking.
-		LifecycleMetadata metadata = this.lifecycleMetadataCache.get(clazz);
+		LifecycleMetadata metadata = this.lifecycleMetadataCache.get(clazz); /* 在缓存中取一下， 没有再创建 */
 		if (metadata == null) {
 			synchronized (this.lifecycleMetadataCache) {
 				metadata = this.lifecycleMetadataCache.get(clazz);
 				if (metadata == null) {
 					metadata = buildLifecycleMetadata(clazz);
-					this.lifecycleMetadataCache.put(clazz, metadata);
+					this.lifecycleMetadataCache.put(clazz, metadata); /* 创建完放入缓存 */
 				}
 				return metadata;
 			}

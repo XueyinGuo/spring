@@ -776,7 +776,13 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			* 考虑到字符串和其他数据类型的特殊关系，假如我们在XML中定义一个 <bean id="" class="" name="1">的标签
 			* 那么name这个“1”到底应该作为 int 还是作为 String 呢？虽然可以指定类型，但是我们如果类型也不指定的话，那就需要考虑另外的一个问题
 			* 也就是类型转换！！！！！！
+			*
 			*								属性填充的时候如果有依赖的《Bean》也会顺便一块创建，比如往List、Map、Set等中设置Bean时！！
+			*
+			* 								字符串解析成Address类型的过程
+			*  								1.在此进行值转换 比如 star中有个address属性是Address类型，自己注册了自定义编辑器传入一个字符串解析成Address类型
+			*								2.把解析到的值存入到每个 PropertyValue 的 convertedValue 属性中
+			*								3.从刚才的PropertyValue存入的convertedValue中 获取相应的属性值，并对象相应的属性赋值
 			* ==========================================================================================================
 			* ==========================================================================================================
 			* ==========================================================================================================
@@ -1294,8 +1300,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	protected void applyMergedBeanDefinitionPostProcessors(RootBeanDefinition mbd, Class<?> beanType, String beanName) {
 		for (BeanPostProcessor bp : getBeanPostProcessors()) {
 			if (bp instanceof MergedBeanDefinitionPostProcessor) {
-				MergedBeanDefinitionPostProcessor bdp = (MergedBeanDefinitionPostProcessor) bp;
-				bdp.postProcessMergedBeanDefinition(mbd, beanType, beanName);
+				MergedBeanDefinitionPostProcessor bdp = (MergedBeanDefinitionPostProcessor) bp; /* internalCommonAnnotationProcessor 是这个类对应BeanName */
+				bdp.postProcessMergedBeanDefinition(mbd, beanType, beanName);  /* CommonAnnotationBeanPostProcessor 中处理 @PreDestroy @PostConstruct @Resource */
 			}
 		}
 	}
@@ -1395,6 +1401,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 		/* 判断当前的beanDefinition中是否包含实例供应器，此处相当于一个回调方法，利用回调来创建bean
 		* 创建对象的五种办法之一！！！！！！！！！！！！！！！！
+		* 之前在做BeanDefinition解析的时候早就已经把工厂方法或者 Supplier 方法存在 BeanDefinition中，在创建当前Bean时，直接调用就好了
 		* */
 		Supplier<?> instanceSupplier = mbd.getInstanceSupplier();
 		if (instanceSupplier != null) {
@@ -1402,6 +1409,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 		/* 如果工厂方法不为空，则使用工厂方法初始化策略
 		*  创建对象的五种办法之一！！！！！！！！！！！！！！！！
+		* 之前在做BeanDefinition解析的时候早就已经把工厂方法或者 Supplier 方法存在 BeanDefinition中，在创建当前Bean时，直接调用就好了
 		*  */
 		if (mbd.getFactoryMethodName() != null) {
 			return instantiateUsingFactoryMethod(beanName, mbd, args);
@@ -1530,7 +1538,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		this.currentlyCreatedBean.set(beanName);
 		try {
 			/*
-			* get() 是函数式接口，相当于直接调用在 com\sztu\spring\supplier\SupplierBeanFactoryPostProcessor中修改后的
+			* get() 是函数式接口，相当于直接调用在 com\sztu\spring\supplier\SupplierBeanFactoryPostProcessor 中修改后的
 			* beanDefinition中的 CreateSupplier::createUser 直接返回 User 对象
 			* */
 			instance = instanceSupplier.get();
@@ -1618,7 +1626,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			else {
 				/*
 				* 获取实例化策略，默认使用CGLib代理，然后使用代理类初始化对象
-				* ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+				* 有methodOverride属性就创建代理子类，没有的话就直接反射创建！！！！！！！！！！！
 				* */
 				beanInstance = getInstantiationStrategy().instantiate(mbd, beanName, this);
 			}
@@ -1804,7 +1812,10 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 					</property>
 				</bean>
 
-				如果可以获取到property标签，则开始处理 property属性， 如果里边有各种依赖的其他Bean，在此步骤中创建
+				如果可以获取到property标签，则开始处理 property属性， 如果里边有各种依赖的其他Bean，在此步骤中创建    String解析成Address也在这里
+				    1.在此进行值转换 比如 star中有个address属性是Address类型，自己注册了自定义编辑器传入一个字符串解析成Address类型
+					2.把解析到的值存入到每个 PropertyValue 的 convertedValue 属性中
+			 	    3.从刚才的PropertyValue存入的convertedValue中 获取相应的属性值，并对象相应的属性赋值
 			* */
 			applyPropertyValues(beanName, mbd, bw, pvs);
 		}
@@ -2135,14 +2146,14 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				Object convertedValue = resolvedValue;
 				boolean convertible = bw.isWritableProperty(propertyName) &&
 						!PropertyAccessorUtils.isNestedOrIndexedProperty(propertyName);
-				if (convertible) {
+				if (convertible) { /* 在此进行值转换 比如 star中有个address属性是Address类型，自己注册了自定义编辑器传入一个字符串解析成Address类型 */
 					convertedValue = convertForProperty(resolvedValue, propertyName, bw, converter);
 				}
 				// Possibly store converted value in merged bean definition,
 				// in order to avoid re-conversion for every created bean instance.
 				if (resolvedValue == originalValue) {
 					if (convertible) {
-						pv.setConvertedValue(convertedValue);
+						pv.setConvertedValue(convertedValue); /* 把解析到的值存入到每个 PropertyValue 的 convertedValue 属性中 */
 					}
 					deepCopy.add(pv);
 				}
@@ -2164,7 +2175,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		// Set our (possibly massaged) deep copy.
 		try {
-			bw.setPropertyValues(new MutablePropertyValues(deepCopy));
+			bw.setPropertyValues(new MutablePropertyValues(deepCopy)); /* 从刚才的PropertyValue存入的convertedValue中 获取相应的属性值，并对象相应的属性赋值 */
 		}
 		catch (BeansException ex) {
 			throw new BeanCreationException(
@@ -2180,7 +2191,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			@Nullable Object value, String propertyName, BeanWrapper bw, TypeConverter converter) {
 
 		if (converter instanceof BeanWrapperImpl) {
-			return ((BeanWrapperImpl) converter).convertForProperty(value, propertyName);
+			return ((BeanWrapperImpl) converter).convertForProperty(value, propertyName); /* 字符串解析成Address等等 */
 		}
 		else {
 			PropertyDescriptor pd = bw.getPropertyDescriptor(propertyName);

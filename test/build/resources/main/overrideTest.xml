@@ -3,8 +3,8 @@
 	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
-	<bean id="banana" class="com.sztu.spring.myLookupMethod.Banana"></bean>
-	<bean id="apple" class="com.sztu.spring.myLookupMethod.Apple"></bean>
+	<bean id="banana" class="com.sztu.spring.myLookupMethod.Banana" scope="singleton"></bean>
+	<bean id="apple" class="com.sztu.spring.myLookupMethod.Apple" scope="prototype"></bean>
 
 	<bean id="fruitPlate2" class="com.sztu.spring.myLookupMethod.FruitPlate">
 		<lookup-method name="getFruit" bean="apple" ></lookup-method>

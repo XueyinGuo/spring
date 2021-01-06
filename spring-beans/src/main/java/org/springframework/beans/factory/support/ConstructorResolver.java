@@ -521,7 +521,7 @@ class ConstructorResolver {
 					}
 				}
 			}
-
+			/* 如果找到的工厂方法只有一个，则直接使用（不直接用的话是后边的条件不满足 【显示传递的参数、构造器是否有参数】） */
 			if (candidates.size() == 1 && explicitArgs == null && !mbd.hasConstructorArgumentValues()) {
 				Method uniqueCandidate = candidates.get(0);
 				if (uniqueCandidate.getParameterCount() == 0) {
@@ -535,7 +535,7 @@ class ConstructorResolver {
 					return bw;
 				}
 			}
-
+			/* 找到的工厂方法大于1，先排个序，按照参数数量排个序 */
 			if (candidates.size() > 1) {  // explicitly skip immutable singletonList
 				candidates.sort(AutowireUtils.EXECUTABLE_COMPARATOR);
 			}
@@ -554,7 +554,7 @@ class ConstructorResolver {
 				// so we need to resolve the arguments specified in the constructor arguments held in the bean definition.
 				/*
 				* 没有通过形参的形式传递进来的实例化Bean的时候使用的参数
-				* 所以需要解析BeanDefinition中定义的参数
+				* 所以需要解析BeanDefinition中定义的参数，，minNrOfArgs 需要用的参数个数（显示传递或者从配置文件中解析出来的属性值的多少）
 				* */
 				if (mbd.hasConstructorArgumentValues()) {
 					ConstructorArgumentValues cargs = mbd.getConstructorArgumentValues();
@@ -567,7 +567,7 @@ class ConstructorResolver {
 			}
 
 			LinkedList<UnsatisfiedDependencyException> causes = null;
-
+			/* 遍历所有的构造函数，此时的构造函数已经按照参数数量排好顺序，而且上边也有了最小要求的参数个数，当形参个数少于实参个数时直接跳出，可以少一些无所谓的循环 */
 			for (Method candidate : candidates) {
 				int parameterCount = candidate.getParameterCount();
 
@@ -605,7 +605,7 @@ class ConstructorResolver {
 							continue;
 						}
 					}
-
+					/* 有时重载的构造函数肯能存在 只是换个参数位置，但是参数数量一样的情况，比如【int i， String s】 【String s， int i】 差异值控制选择最合适的构造函数 */
 					int typeDiffWeight = (mbd.isLenientConstructorResolution() ?
 							argsHolder.getTypeDifferenceWeight(paramTypes) : argsHolder.getAssignabilityWeight(paramTypes));
 					// Choose this factory method if it represents the closest match.
@@ -680,7 +680,7 @@ class ConstructorResolver {
 						"(hint: specify index/type/name arguments for simple parameters to avoid type ambiguities): " +
 						ambiguousFactoryMethods);
 			}
-
+			/* 缓存第一次解析结果， 提高程序性能 */
 			if (explicitArgs == null && argsHolderToUse != null) {
 				mbd.factoryMethodToIntrospect = factoryMethodToUse;
 				argsHolderToUse.storeCache(mbd, factoryMethodToUse);
@@ -708,6 +708,7 @@ class ConstructorResolver {
 						this.beanFactory.getAccessControlContext());
 			}
 			else {
+				/* invoke方法就是调用自己的方法了 */
 				return this.beanFactory.getInstantiationStrategy().instantiate(
 						mbd, beanName, this.beanFactory, factoryBean, factoryMethod, args);
 			}
