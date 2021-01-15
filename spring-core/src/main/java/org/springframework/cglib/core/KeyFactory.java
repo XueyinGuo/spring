@@ -157,6 +157,7 @@ abstract public class KeyFactory {
 	}
 
 	public static KeyFactory create(Class keyInterface, KeyFactoryCustomizer first, List<KeyFactoryCustomizer> next) {
+		/* 第一次创建 KEY_FACTORY 对象的时候，keyInterface 是那个内部接口 EnhancerKey， first 是一个“定制器”  */
 		return create(keyInterface.getClassLoader(), keyInterface, first, next);
 	}
 
@@ -166,21 +167,24 @@ abstract public class KeyFactory {
 
 	public static KeyFactory create(ClassLoader loader, Class keyInterface, KeyFactoryCustomizer customizer,
 			List<KeyFactoryCustomizer> next) {
-		Generator gen = new Generator();
-		gen.setInterface(keyInterface);
+		Generator gen = new Generator(); /* 创建一个最简易的代理类生成器，即值会生成HashCode，equals toString newInstance方法 */
+		gen.setInterface(keyInterface); /* 把接口设置为 keyInterface类型 */
 		// SPRING PATCH BEGIN
 		gen.setContextClass(keyInterface);
 		// SPRING PATCH END
 
 		if (customizer != null) {
-			gen.addCustomizer(customizer);
+			gen.addCustomizer(customizer); /* 添加定制器，customizer 就是刚才的 first */
 		}
 		if (next != null && !next.isEmpty()) {
 			for (KeyFactoryCustomizer keyFactoryCustomizer : next) {
 				gen.addCustomizer(keyFactoryCustomizer);
 			}
 		}
-		gen.setClassLoader(loader);
+		gen.setClassLoader(loader); /* 设置生成器的类加载器 */
+		/*
+		* 生成 enhancerKey 的代理类
+		* */
 		return gen.create();
 	}
 
@@ -233,8 +237,8 @@ abstract public class KeyFactory {
 		}
 
 		public KeyFactory create() {
-			setNamePrefix(keyInterface.getName());
-			return (KeyFactory) super.create(keyInterface.getName());
+			setNamePrefix(keyInterface.getName()); /* 设置了该生成器生成代理类的名字前缀，就是我们接口名 Enhancer.enhancerKey */
+			return (KeyFactory) super.create(keyInterface.getName()); /* 生成代理类之后，并创建代理类的对象 */
 		}
 
 		public void setHashConstant(int constant) {

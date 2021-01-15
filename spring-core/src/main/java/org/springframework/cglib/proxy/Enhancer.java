@@ -99,7 +99,14 @@ public class Enhancer extends AbstractClassGenerator {
 	};
 
 	private static final Source SOURCE = new Source(Enhancer.class.getName());
-
+	/*
+	* KEY_FACTORY 是一个 EnhancerKey 类型的对象， 用来创建 之后的业务代理类（例子中就是 MyCalculatorForCGLibProxy，代理一个计算器）
+	* 但是 EnhancerKey 在一开始的时候只是一个 内部接口，我们创建业务代理类需要用到 EnhancerKey类型的一个对象，所以我们需要一个EnhancerKey的对象，
+	* 然后调用 接口中定义的 newInstance 方法才能创建一个对象。
+	*
+	* 但是很遗憾，我们不能直接 new EnhancerKey(), 所以我们必须在这里先生成一个 EnhancerKey 的代理类，然后new 一个 EnhancerKey 的代理类的对象，
+	* 之后才能创建 生成业务代理类，并创建业务类的代理对象
+	* */
 	private static final EnhancerKey KEY_FACTORY =
 			(EnhancerKey) KeyFactory.create(EnhancerKey.class, KeyFactory.HASH_ASM_TYPE, null);
 

@@ -94,17 +94,17 @@ abstract public class AbstractClassGenerator<T> implements ClassGenerator {
 		};
 
 		private static final Function<AbstractClassGenerator, Object> GET_KEY = new Function<AbstractClassGenerator, Object>() {
-			public Object apply(AbstractClassGenerator gen) {
+			public Object apply(AbstractClassGenerator gen) { /* 函数式接口放入 ClassLoaderData */
 				return gen.key;
 			}
 		};
 
 		public ClassLoaderData(ClassLoader classLoader) {
-			if (classLoader == null) {
+			if (classLoader == null) { /* 类加载器不能为空 */
 				throw new IllegalArgumentException("classLoader == null is not yet supported");
 			}
-			this.classLoader = new WeakReference<ClassLoader>(classLoader);
-			Function<AbstractClassGenerator, Object> load =
+			this.classLoader = new WeakReference<ClassLoader>(classLoader); /* 设置类加载器为弱引用，弱引用在下次垃圾回收的时候就会回收 */
+			Function<AbstractClassGenerator, Object> load = /* FutureTask中调用，生成具体的字节码 */
 					new Function<AbstractClassGenerator, Object>() {
 						public Object apply(AbstractClassGenerator gen) {
 							Class klass = gen.generate(ClassLoaderData.this);
@@ -131,6 +131,14 @@ abstract public class AbstractClassGenerator<T> implements ClassGenerator {
 				return gen.generate(ClassLoaderData.this);
 			}
 			else {
+				/*
+				* 进入LoadingCache.get方法，在跳入的方法中，直接跳入，ClassLoaderData 的 gen.key【GET_KEY】获取到 要创建那个类的 名字（第一次是 EnhancerKey）
+				* 然后获取 这个 key 的对象
+				* 如果获取不到，则创建一个对象，在创建对象的时候，会有一个 FutureTask 的创建，
+				* FutureTask 调用 call方法， call方法最后调用 ClassLoaderData 中的第二个函数式接口 【load】，load 去创建类
+				*
+				* 最终 【【【第一次得到的这个  cachedValue 就是 EnhancerKey的代理实现类】】】
+				* */
 				Object cachedValue = generatedClasses.get(gen);
 				return gen.unwrapCachedValue(cachedValue);
 			}
@@ -300,24 +308,43 @@ abstract public class AbstractClassGenerator<T> implements ClassGenerator {
 
 	protected Object create(Object key) {
 		try {
-			ClassLoader loader = getClassLoader();
-			Map<ClassLoader, ClassLoaderData> cache = CACHE;
-			ClassLoaderData data = cache.get(loader);
+			ClassLoader loader = getClassLoader(); /* APP类加载器 */
+			/*
+			* 当前类加载器对应的缓存，缓存的key是类加载器，缓存的value是 classLoaderData
+			* ClassLoaderData可以理解成一个“包含具体业务逻辑的处理过程”，是两个回调函数（虽然看着不是lambda表达式，但是作用是一样的）一个是返回 gen.key【GET_KEY】，一个为了创建具体的class【load】
+			* */
+			Map<ClassLoader, ClassLoaderData> cache = CACHE; /* ClassLoaderData 这个东西挺重要的！ */
+			/*
+			* 第一次获取的时候是空的，但是第二次获取的时候就不空了，因为第一次创建的 EnhancerKey的时候已经往里添加了值，不会重复创建
+			* */
+			ClassLoaderData data = cache.get(loader); /* 先从缓存中获取当前类加载器所有加载过的类 */
 			if (data == null) {
 				synchronized (AbstractClassGenerator.class) {
 					cache = CACHE;
 					data = cache.get(loader);
 					if (data == null) {
-						Map<ClassLoader, ClassLoaderData> newCache = new WeakHashMap<ClassLoader, ClassLoaderData>(cache);
+						Map<ClassLoader, ClassLoaderData> newCache = new WeakHashMap<ClassLoader, ClassLoaderData>(cache); /* 新建一个缓存Cache， 并将之前的缓存Cache的数据放进来，并将已经被gc回收的数据清除掉 */
+						/*
+						* 新建一个当前类加载器对应的classLoaderData并加载到缓存中，
+						* ClassLoaderData 包含两个回调函数（虽然看着不是lambda表达式，但是作用是一样的）一个是返回 gen.key【GET_KEY】，一个为了创建具体的class【load】
+						* */
 						data = new ClassLoaderData(loader);
 						newCache.put(loader, data);
-						CACHE = newCache;
+						CACHE = newCache; /* 刷新全局数据 */
 					}
 				}
 			}
 			this.key = key;
-			Object obj = data.get(this, getUseCache());
+			Object obj = data.get(this, getUseCache()); /* 传入代理生成器，并根据代理类生成器获得返回值 */
 			if (obj instanceof Class) {
+				/*
+				* =======================================
+				* =======================================
+				* 执行 newInstance方法 返回一个代理类的对象，
+				* 第一次返回的 EnhancerKey 的代理实现类的对象
+				* =======================================
+				* =======================================
+				*  */
 				return firstInstance((Class) obj);
 			}
 			return nextInstance(obj);
@@ -332,7 +359,7 @@ abstract public class AbstractClassGenerator<T> implements ClassGenerator {
 
 	protected Class generate(ClassLoaderData data) {
 		Class gen;
-		Object save = CURRENT.get();
+		Object save = CURRENT.get(); /* 当前代理类生成器放入 ThreadLocal */
 		CURRENT.set(this);
 		try {
 			ClassLoader classLoader = data.getClassLoader();
@@ -342,8 +369,8 @@ abstract public class AbstractClassGenerator<T> implements ClassGenerator {
 						"Please file an issue at cglib's issue tracker.");
 			}
 			synchronized (classLoader) {
-				String name = generateClassName(data.getUniqueNamePredicate());
-				data.reserveName(name);
+				String name = generateClassName(data.getUniqueNamePredicate()); /* 代理类名生成 */
+				data.reserveName(name); /* 存入缓存 */
 				this.setClassName(name);
 			}
 			if (attemptLoad) {
@@ -355,7 +382,7 @@ abstract public class AbstractClassGenerator<T> implements ClassGenerator {
 					// ignore
 				}
 			}
-			byte[] b = strategy.generate(this);
+			byte[] b = strategy.generate(this);  /* 生成字节码 */
 			String className = ClassNameReader.getClassName(new ClassReader(b));
 			ProtectionDomain protectionDomain = getProtectionDomain();
 			synchronized (classLoader) { // just in case
