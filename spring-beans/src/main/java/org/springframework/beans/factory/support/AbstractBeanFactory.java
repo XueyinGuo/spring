@@ -384,19 +384,30 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					bean = getObjectForBeanInstance(sharedInstance, name, beanName, mbd);
 				}
 
+				/*
+				* 创建 原型模式的对象
+				* */
 				else if (mbd.isPrototype()) {
 					// It's a prototype -> create a new instance. 如果是原型模式，在此处创建实例
 					Object prototypeInstance = null;
 					try {
+						/*
+						* TODO 原型模式创建之前做什么操作
+						* */
 						beforePrototypeCreation(beanName);
 						prototypeInstance = createBean(beanName, mbd, args);
 					}
 					finally {
+						/*
+						 * TODO 原型模式创建之后做什么操作
+						 * */
 						afterPrototypeCreation(beanName);
 					}
 					bean = getObjectForBeanInstance(prototypeInstance, name, beanName, mbd);
 				}
-
+				/*
+				* 原型模式 和 单例模式 之外的模式
+				* */
 				else {
 					String scopeName = mbd.getScope();
 					if (!StringUtils.hasLength(scopeName)) {
@@ -452,6 +463,10 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				throw new BeanNotOfRequiredTypeException(name, requiredType, bean.getClass());
 			}
 		}
+		/*
+		* ==================================================此时Bean已经创建完成，描述一下Bean的声明周期=======================================================
+		*
+		* */
 		return (T) bean;
 	}
 
@@ -1977,6 +1992,12 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 */
 	protected void registerDisposableBeanIfNecessary(String beanName, Object bean, RootBeanDefinition mbd) {
 		AccessControlContext acc = (System.getSecurityManager() != null ? getAccessControlContext() : null);
+		/*
+		* mbd 是否是单例的
+		* 如果 Bean不是 NullBean && （Bean有destroy方法 || （工厂有 DestructionAwareBeanPostProcessor && Bean有应用于它的可识别销毁的PostProcessor））
+		* 为 true
+		* 否则 false
+		* */
 		if (!mbd.isPrototype() && requiresDestruction(bean, mbd)) {
 			if (mbd.isSingleton()) {
 				// Register a DisposableBean implementation that performs all destruction

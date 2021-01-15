@@ -41,6 +41,13 @@ class AspectJAutoProxyBeanDefinitionParser implements BeanDefinitionParser {
 	@Override
 	@Nullable
 	public BeanDefinition parse(Element element, ParserContext parserContext) {
+		/*
+		 * 注册 AutoProxyCreator，名为 internalAutoProxyCreator 的 BeanDefinition
+		 * beanClass 为 AnnotationAwareAspectJAutoProxyCreator
+		 * AnnotationAwareAspectJAutoProxyCreator 实现了 BeanPostProcessor -> InstantiationAwareBeanPostProcessor -> SmartInstantiationAwareBeanPostProcessor
+		 *
+		 * 是不是之后用这个BeanDefinition创建出来的 Bean 去扫描，标了@Component @Aspect 的Bean中的before after 方法等等操作？？？
+		 * */
 		AopNamespaceUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary(parserContext, element);
 		extendBeanDefinition(element, parserContext);
 		return null;

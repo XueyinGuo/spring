@@ -248,6 +248,40 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 			if (this.advisedBeans.containsKey(cacheKey)) {
 				return null;
 			}
+			/*
+			* 1.
+			* （当前 beanClass 是否是系统配置类  AopInfrastructureBean Advice Pointcut Advisor 这些类型  ）  ||
+			* （工厂也不等于空，&& 而且 也得是 切面类）
+			* 2.
+			*	shouldSkip() 方法中 获取所有的 Advisors
+			*
+			*		 findCandidateAdvisors() 创建bean
+			*
+			*		 创建bean,并添加到 List 中，待返回
+			*
+			*		 此处创建对象有意思的地方在于：之前创建一个半成品对象，是直接反射调用无参构造，然后调用Set方法去给属性赋值，所谓的实例化初始化时分开的
+			*		 但是，在这些Advisor类中没有无参构造，只有一个有参构造，所以在这里创建 Advisor对象的时候，我必须先把有参构造方法中
+			*		 	要求的参数先创建好。所以这里的对象的创造，是需要很多层的嵌套的（跨方法递归的）。
+			*
+			*		        		          		   		 { -----> MethodLocatingFactoryBean
+			*			Advisor#0--#4 --->   adviceDef --->  { -----> expression="execution(Integer com.sztu.spring.aopTest.MyCalculator.*(Integer,Integer))"
+			*						                 	     { -----> SimpleBeanFactoryAwareAspectInstanceFactory
+			*
+			*		 意思就是说在创建 Advisor 的时候， 三个嵌套对象也要创建好
+			*
+			* ======================================================
+			* ======================================================
+			* 在创建第一个Bean对象之前需要吧所有的 AOP 相关的Bean全部创建完毕 ，
+			* 所以在创建第一个Bean的时候，这里find找到所有的Advisor然后先实例化
+			* ======================================================
+			* ======================================================
+			* 3. 那我们为什么要调用 shouldSkip() 呢？为什么判断某个Bean是否需要跳过创建呢？
+			* 		是因为切面类什么的都是不需要代理的！所以
+			* 		这一段 postProcessBeforeInstantiation 的执行逻辑就是：如果创建的当前Bean是切面类，那么我是不需要动态代理这个切面的。
+			*
+			* 切面类 通俗点讲就是 “解析出 Advisor 对象的那个类，所有的这些对象都是从LogUtil中解析出来，所以 logUtil 需要被跳过的”
+			* 而且所有跟AOP相关的Bean对象（Method 表达式 advice 等都跳过，直接走普通Bean创建）
+			* */
 			if (isInfrastructureClass(beanClass) || shouldSkip(beanClass, beanName)) {
 				this.advisedBeans.put(cacheKey, Boolean.FALSE);
 				return null;
@@ -257,7 +291,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		// Create proxy here if we have a custom TargetSource.
 		// Suppresses unnecessary default instantiation of the target bean:
 		// The TargetSource will handle target instances in a custom fashion.
-		TargetSource targetSource = getCustomTargetSource(beanClass, beanName);
+		TargetSource targetSource = getCustomTargetSource(beanClass, beanName); /* 一般都是 null */
 		if (targetSource != null) {
 			if (StringUtils.hasLength(beanName)) {
 				this.targetSourcedBeans.add(beanName);
@@ -267,7 +301,11 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 			this.proxyTypes.put(cacheKey, proxy.getClass());
 			return proxy;
 		}
-
+		/*
+		* 即便是普通对象也返回空，我们要记得开始这个逻辑的入口，“给BPP一个机会返回代理对象”，
+		* 其实主要针对的事用户自定义的Bean before Instantiation 中返回代理对象
+		* 如果开启了 AOP ，那是一个标准化的代理创建流程，而这里更侧重于用户自定的方式返回代理，所以此时也是返回空
+		*  */
 		return null;
 	}
 
@@ -296,7 +334,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		if (bean != null) {
 			Object cacheKey = getCacheKey(bean.getClass(), beanName);
 			if (this.earlyProxyReferences.remove(cacheKey) != bean) {
-				return wrapIfNecessary(bean, beanName, cacheKey);
+				return wrapIfNecessary(bean, beanName, cacheKey);  /* 创建真正的代理对象 */
 			}
 		}
 		return bean;
@@ -338,12 +376,15 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		if (Boolean.FALSE.equals(this.advisedBeans.get(cacheKey))) {
 			return bean;
 		}
-		if (isInfrastructureClass(bean.getClass()) || shouldSkip(bean.getClass(), beanName)) {
+		if (isInfrastructureClass(bean.getClass()) || shouldSkip(bean.getClass(), beanName)) { /* shouldSkip() 又见到你了！  这个时候就不能跳过啦 */
 			this.advisedBeans.put(cacheKey, Boolean.FALSE);
 			return bean;
 		}
-
+		/*
+		* 【【【创建动态代理】】】
+		* */
 		// Create proxy if we have advice.
+		/* 先获取到创建当前代理对象的时候需要用到的所有的advisor，而且新加了一个ExposeInvocationInterceptor */
 		Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, null);
 		if (specificInterceptors != DO_NOT_PROXY) {
 			this.advisedBeans.put(cacheKey, Boolean.TRUE);
@@ -393,6 +434,9 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	 * @see org.springframework.beans.factory.config.AutowireCapableBeanFactory#ORIGINAL_INSTANCE_SUFFIX
 	 */
 	protected boolean shouldSkip(Class<?> beanClass, String beanName) {
+		/*
+		* 创建AOP的Bean对象的时候有重载，当创建普通对象判断需不需要代理的时候又会调回来
+		* */
 		return AutoProxyUtils.isOriginalInstance(beanName, beanClass);
 	}
 

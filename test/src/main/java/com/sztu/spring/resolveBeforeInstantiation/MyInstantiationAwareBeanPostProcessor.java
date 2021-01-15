@@ -1,5 +1,6 @@
 package com.sztu.spring.resolveBeforeInstantiation;
 
+import com.sztu.spring.myLookupMethod.Banana;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.PropertyValues;
 import org.springframework.beans.factory.config.InstantiationAwareBeanPostProcessor;
@@ -34,6 +35,16 @@ public class MyInstantiationAwareBeanPostProcessor implements InstantiationAware
 	@Override
 	public boolean postProcessAfterInstantiation(Object bean, String beanName) throws BeansException {
 		System.out.println("BeanName: "+beanName + "  执行MyInstantiationAwareBeanPostProcessor -> postProcess ==After== Instantiation");
+		/*
+		 * 在 populateBean(beanName, mbd, instanceWrapper); 中填充属性的时候
+		 * 如果自己实现了 InstantiationAwareBeanPostProcessor 接口中，自己重写了 postProcessAfterInstantiation方法
+		 * 在方法中给这个 类型的 bean 赋值，而且不希望自己被赋的值被下边的操作覆盖掉，所以就要在
+		 * postProcessAfterInstantiation方法 中返回 false，  ！false = true 直接跳出当前 populateBean方法执行
+		 * */
+		if(bean instanceof Banana){
+
+			return false;
+		}
 		return true;
 	}
 	/*

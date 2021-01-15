@@ -78,6 +78,17 @@ class ApplicationContextAwareProcessor implements BeanPostProcessor {
 	@Override
 	@Nullable
 	public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+		/*
+		* 判断是否属于这些类型，不属于直接返回
+		* 这也是之前忽略过的接口们
+		* prepareBeanFactory，中
+		*   		{	beanFactory.ignoreDependencyInterface(EnvironmentAware.class);
+		*			{	beanFactory.ignoreDependencyInterface(EmbeddedValueResolverAware.class);
+		*			{	beanFactory.ignoreDependencyInterface(ResourceLoaderAware.class);
+		*	----->	{	beanFactory.ignoreDependencyInterface(ApplicationEventPublisherAware.class);
+		*			{	beanFactory.ignoreDependencyInterface(MessageSourceAware.class);
+		*			{	beanFactory.ignoreDependencyInterface(ApplicationContextAware.class);
+		* */
 		if (!(bean instanceof EnvironmentAware || bean instanceof EmbeddedValueResolverAware ||
 				bean instanceof ResourceLoaderAware || bean instanceof ApplicationEventPublisherAware ||
 				bean instanceof MessageSourceAware || bean instanceof ApplicationContextAware)){
@@ -97,6 +108,9 @@ class ApplicationContextAwareProcessor implements BeanPostProcessor {
 			}, acc);
 		}
 		else {
+			/*
+			* 属于上述那些类型的话调用方法处理各个 Aware 接口
+			* */
 			invokeAwareInterfaces(bean);
 		}
 

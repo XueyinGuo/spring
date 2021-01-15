@@ -71,6 +71,42 @@ public abstract class NamespaceHandlerSupport implements NamespaceHandler {
 	@Nullable
 	public BeanDefinition parse(Element element, ParserContext parserContext) {
 		/*获取元素解析器*/
+		/* AOP标签解析 和 context:component-scan 标签解析 */
+		/*
+		* 1.
+		*	 <aop:config>  的解析用  ConfigBeanDefinitionParser
+		*	   	                		           	   { -----> MethodLocatingFactoryBean
+		*				Advisor --->   adviceDef --->  { -----> expression="execution(Integer com.sztu.spring.aopTest.MyCalculator.*(Integer,Integer))"
+		*							                   { -----> SimpleBeanFactoryAwareAspectInstanceFactory
+		*
+		* 	1.1 每个after before after-returning after-throwing around 标签都解析成一个 adviceDef 然后外边再套一层  Advisor
+		* 	1.2 五个Advisor（#0---#4），和所有解析出的表达式，放入一个 aspectComponentDefinition 中
+		* 	1.3 解析 point-cut ，解析出表达式的结果值
+		*   	pointcutsBean 的 BeanDefinition的 beanClass = AspectJExpressionPointcut 把point-cut的BeanDefinition注册到BeanFactory
+		*
+		*
+		* 2.
+		* 	 <aop:aspectj-autoproxy>  的解析用 AspectJAutoProxyBeanDefinitionParser 注入 internal
+		* 	 										AopNamespaceUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary(parserContext, element);
+		*
+		* 	 	【AnnotationAwareAspectJAutoProxyCreator 是 BPP】 -> InstantiationAwareBeanPostProcessor -> SmartInstantiationAwareBeanPostProcessor
+		*
+		*
+		* 3.
+		*    <context:component-scan> 的解析用  ComponentScanBeanDefinitionParser 注入 internal
+		*    											AnnotationConfigUtils.registerAnnotationConfigProcessors(readerContext.getRegistry(), source);
+		*
+		*    		3.1  【ConfigurationClassPostProcessor 是 BFPP】 -> BDRPP : @Component, @Repository, @Service, @Controller, @RestController, @ControllerAdvice
+		*    																@Import @ImportResource @ComponentScan @ComponentScans @Bean 的解析
+		*
+		*    		3.2  【AutowiredAnnotationBeanPostProcessor是 BPP】 -> MergedBeanDefinitionPostProcessor : @Autowired  @Value  @Inject 的解析
+		*
+		*    		3.3  【CommonAnnotationBeanPostProcessor 是 BPP】 -> InstantiationAwareBeanPostProcessor :  @Resource  @PostConstruct  @PreDestroy
+		*
+		* BFPP + BDRPP 在 invokeBeanFactoryPostProcessor()时getBean初始化完毕
+		* BPP 在 registerBeanPostProcessor()时的getBean初始化完毕
+		* 在最后创建对象的时候就只等着用他们就好了
+		* */
 		BeanDefinitionParser parser = findParserForElement(element, parserContext);
 		return (parser != null ? parser.parse(element, parserContext) : null);
 	}

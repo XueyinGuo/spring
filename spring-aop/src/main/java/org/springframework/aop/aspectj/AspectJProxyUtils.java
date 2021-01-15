@@ -55,6 +55,9 @@ public abstract class AspectJProxyUtils {
 				}
 			}
 			if (foundAspectJAdvice && !advisors.contains(ExposeInvocationInterceptor.ADVISOR)) {
+				/*
+				* ==================================================================
+				* */
 				advisors.add(0, ExposeInvocationInterceptor.ADVISOR);
 				return true;
 			}

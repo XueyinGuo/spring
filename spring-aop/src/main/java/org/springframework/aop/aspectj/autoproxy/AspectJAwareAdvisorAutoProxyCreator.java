@@ -98,7 +98,28 @@ public class AspectJAwareAdvisorAutoProxyCreator extends AbstractAdvisorAutoProx
 	@Override
 	protected boolean shouldSkip(Class<?> beanClass, String beanName) {
 		// TODO: Consider optimization by caching the list of the aspect names
-		List<Advisor> candidateAdvisors = findCandidateAdvisors();
+		/*
+		 * findCandidateAdvisors() 创建bean
+		 *
+		 * 创建bean,并添加到 List 中，待返回
+		 *
+		 * 此处创建对象有意思的地方在于：之前创建一个半成品对象，是直接反射调用无参构造，然后调用Set方法去给属性赋值，所谓的实例化初始化时分开的
+		 * 但是，在这些Advisor类中没有无参构造，只有一个有参构造，所以在这里创建 Advisor对象的时候，我必须先把有参构造方法中
+		 * 	要求的参数先创建好。所以这里的对象的创造，是需要很多层的嵌套的（跨方法递归的）。
+		 *
+		 *
+		 *        		          		   { -----> MethodLocatingFactoryBean
+		 *	Advisor --->   adviceDef --->  { -----> expression="execution(Integer com.sztu.spring.aopTest.MyCalculator.*(Integer,Integer))"
+		 *		|		      |            { -----> SimpleBeanFactoryAwareAspectInstanceFactory
+		 * 		|			  |								|
+		 * 		|			  |								|
+		 *	  有参			有参					调用三个无参构造，但是第二个对象 expression 是 RunTimeReference，而且作用域是原型模式
+		 *											后边这四个对象是原型模式的，只有advisor是单例模式的，根本不放进一级缓存
+		 *
+		 * 意思就是说在创建 Advisor 的时候， 三个嵌套对象也要创建好
+		 *
+		 * */
+		List<Advisor> candidateAdvisors = findCandidateAdvisors(); /* 在创建第一个Bean对象之前需要吧所有的 AOP 相关的Bean全部创建完毕 ，所以在创建第一个Bean的时候，这里find找到所有的Advisor然后先实例化*/
 		for (Advisor advisor : candidateAdvisors) {
 			if (advisor instanceof AspectJPointcutAdvisor &&
 					((AspectJPointcutAdvisor) advisor).getAspectName().equals(beanName)) {

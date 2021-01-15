@@ -33,6 +33,11 @@ import org.springframework.util.ClassUtils;
  * @author Juergen Hoeller
  * @since 2.0
  */
+
+/*
+* 有了工厂和切面名字，就可以为所欲为，
+* BeanFactoryAware 帮助 这个类获得 beanFactory
+* */
 public class SimpleBeanFactoryAwareAspectInstanceFactory implements AspectInstanceFactory, BeanFactoryAware {
 
 	@Nullable

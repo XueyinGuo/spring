@@ -102,12 +102,20 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
 		CompositeComponentDefinition compositeDef =
 				new CompositeComponentDefinition(element.getTagName(), parserContext.extractSource(element));
 		parserContext.pushContainingComponent(compositeDef);
-
+		/*
+		* 注册自动代理模式创建器， AspectJAwareAdvisorAutoProxyCreator
+		* 用注解的时候怎么办呢？  AnnotationAwareAspectJAutoProxyCreator
+		* */
 		configureAutoProxyCreator(parserContext, element);
-
+		/*
+		* pointcut   advisor   aspect  标签解析
+		* */
 		List<Element> childElts = DomUtils.getChildElements(element);
 		for (Element elt: childElts) {
 			String localName = parserContext.getDelegate().getLocalName(elt);
+			/*
+			* <aop:config>下边只有这三个子标签
+			* */
 			if (POINTCUT.equals(localName)) {
 				parsePointcut(elt, parserContext);
 			}
@@ -196,14 +204,15 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
 	}
 
 	private void parseAspect(Element aspectElement, ParserContext parserContext) {
-		String aspectId = aspectElement.getAttribute(ID);
-		String aspectName = aspectElement.getAttribute(REF);
+		String aspectId = aspectElement.getAttribute(ID); /*  */
+		String aspectName = aspectElement.getAttribute(REF);  /*  ref="logUtil"  */
 
 		try {
+			/* 在队列中放一个键值对： id:ref */
 			this.parseState.push(new AspectEntry(aspectId, aspectName));
 			List<BeanDefinition> beanDefinitions = new ArrayList<>();
 			List<BeanReference> beanReferences = new ArrayList<>();
-
+			/* 获取 “declare-parents”属性 */
 			List<Element> declareParents = DomUtils.getChildElementsByTagName(aspectElement, DECLARE_PARENTS);
 			for (int i = METHOD_INDEX; i < declareParents.size(); i++) {
 				Element declareParentsElement = declareParents.get(i);
@@ -212,10 +221,19 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
 
 			// We have to parse "advice" and all the advice kinds in one loop, to get the
 			// ordering semantics right.
+			/*
+			* 获取到所有的 <aop:aspect>里边的东西，
+			* before  around   after-returning    after  after-throwing
+			* 还有一个 <aop:pointcut> */
 			NodeList nodeList = aspectElement.getChildNodes();
 			boolean adviceFoundAlready = false;
 			for (int i = 0; i < nodeList.getLength(); i++) {
 				Node node = nodeList.item(i);
+				/*
+				* 是否是 before  around   after-returning    after  after-throwing 五种标签
+				*	是的话就解析
+				*  <aop:pointcut>暂时先不解析
+				 * */
 				if (isAdviceNode(node, parserContext)) {
 					if (!adviceFoundAlready) {
 						adviceFoundAlready = true;
@@ -227,16 +245,29 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
 						}
 						beanReferences.add(new RuntimeBeanReference(aspectName));
 					}
+					/*
+					* 创建三个 RootBeanDefinition，封装给 adviceDef 然后外边再套一层  Advisor
+					*
+					*                   		       { -----> MethodLocatingFactoryBean
+					*	Advisor --->   adviceDef --->  { -----> expression="execution(Integer com.sztu.spring.aopTest.MyCalculator.*(Integer,Integer))"
+					*				                   { -----> SimpleBeanFactoryAwareAspectInstanceFactory
+					*  */
 					AbstractBeanDefinition advisorDefinition = parseAdvice(
 							aspectName, i, aspectElement, (Element) node, parserContext, beanDefinitions, beanReferences);
 					beanDefinitions.add(advisorDefinition);
 				}
 			}
-
+			/*
+			* 把上边解析到的 Advisor 们和 所有的表达式们 拿过来，统一放到一个 切面定义信息中 AspectComponentDefinition
+			* */
 			AspectComponentDefinition aspectComponentDefinition = createAspectComponentDefinition(
 					aspectElement, aspectId, beanDefinitions, beanReferences, parserContext);
 			parserContext.pushContainingComponent(aspectComponentDefinition);
-
+			/*
+			* 解析 point-cut ，解析出表达式的结果值
+			* pointcutsBean 的 BeanDefinition的 beanClass = AspectJExpressionPointcut
+			* 把point-cut的BeanDefinition注册到BeanFactory
+			* */
 			List<Element> pointcuts = DomUtils.getChildElementsByTagName(aspectElement, POINTCUT);
 			for (Element pointcutElement : pointcuts) {
 				parsePointcut(pointcutElement, parserContext);
@@ -320,23 +351,50 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
 			this.parseState.push(new AdviceEntry(parserContext.getDelegate().getLocalName(adviceElement)));
 
 			// create the method factory bean
+			/*
+			* MethodLocatingFactoryBean 用来在指定的Bean上找到对应的方法
+			* 创建一个 beanClass 是 MethodLocatingFactoryBean 的 RootBeanDefinition
+			* 并把 xml文件中的 切面名 和 advice（需要执行的方法）记录在 BeanDefinition中
+			* */
 			RootBeanDefinition methodDefinition = new RootBeanDefinition(MethodLocatingFactoryBean.class);
 			methodDefinition.getPropertyValues().add("targetBeanName", aspectName);
 			methodDefinition.getPropertyValues().add("methodName", adviceElement.getAttribute("method"));
 			methodDefinition.setSynthetic(true);
 
 			// create instance factory definition
+			/*
+			* SimpleBeanFactoryAwareAspectInstanceFactory 这个类 是用来在 在容器（BeanFactory）中根据Bean名称找到切面
+			* 创建一个 SimpleBeanFactoryAwareAspectInstanceFactory 的 BeanDefinition
+			* aspectName 就是 对应的那个 切面Bean， 测试的时候用的  <aop:aspect ref="logUtil">
+			* 所以  <bean id="logUtil"> 就是 切面Bean
+			* */
 			RootBeanDefinition aspectFactoryDef =
 					new RootBeanDefinition(SimpleBeanFactoryAwareAspectInstanceFactory.class);
 			aspectFactoryDef.getPropertyValues().add("aspectBeanName", aspectName);
 			aspectFactoryDef.setSynthetic(true);
 
 			// register the pointcut
+			/*
+			* RootBeanDefinition 是 AbstractBeanDefinition 的子类
+			* 创建一个抽象的BeanDefinition，并把刚刚创建的两个 RootBeanDefinition 传入，
+			* 设置完之后
+			* adviceDef 就变成了 这个样子：
+			* 我怎么样找到 哪些方法应该触发切点逻辑：
+			* 			1.用第一个参数 methodDefinition 从 第二个参数 表达式所表达的类 中找到所有符合的方法
+			* 			2.找到方法之后应该去哪里找对应的advice呢？去第三个参数中找对应的额外触发逻辑
+			*
+			* adviceDef { -----> MethodLocatingFactoryBean
+			* 			{ -----> expression="execution(Integer com.sztu.spring.aopTest.MyCalculator.*(Integer,Integer))"
+			* 			{ -----> SimpleBeanFactoryAwareAspectInstanceFactory
+			* */
 			AbstractBeanDefinition adviceDef = createAdviceDefinition(
 					adviceElement, parserContext, aspectName, order, methodDefinition, aspectFactoryDef,
 					beanDefinitions, beanReferences);
 
 			// configure the advisor
+			/*
+			* adviceDef 外边 包装一层  AspectJPointcutAdvisor
+			* */
 			RootBeanDefinition advisorDefinition = new RootBeanDefinition(AspectJPointcutAdvisor.class);
 			advisorDefinition.setSource(parserContext.extractSource(adviceElement));
 			advisorDefinition.getConstructorArgumentValues().addGenericArgumentValue(adviceDef);
@@ -346,6 +404,13 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
 			}
 
 			// register the final advisor
+			/*
+			* 把包装完的 Advisor的BeanDefinition注册到 BeanFactory
+			*
+			*                   		      { -----> MethodLocatingFactoryBean
+			*  Advisor --->   adviceDef --->  { -----> expression="execution(Integer com.sztu.spring.aopTest.MyCalculator.*(Integer,Integer))"
+			*			                      { -----> SimpleBeanFactoryAwareAspectInstanceFactory
+			* */
 			parserContext.getReaderContext().registerWithGeneratedName(advisorDefinition);
 
 			return advisorDefinition;
@@ -365,10 +430,20 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
 			Element adviceElement, ParserContext parserContext, String aspectName, int order,
 			RootBeanDefinition methodDef, RootBeanDefinition aspectFactoryDef,
 			List<BeanDefinition> beanDefinitions, List<BeanReference> beanReferences) {
-
+		/*
+		* 首先根据adviceElement节点分析出是什么类型的Advice，
+		* getAdviceClass(adviceElement, parserContext)
+		* 如果当前标签是 <aop:before ：         则返回 AspectJMethodBeforeAdvice
+		* 如果当前标签是 <aop:after ：          则返回 AspectJAfterAdvice
+		* 如果当前标签是 <aop:after-returning ：则返回 AspectJAfterReturningAdvice
+		* 如果当前标签是 <aop:after-throwing ： 则返回 AFTER_THROWING_ELEMENT
+		* 如果当前标签是 <aop:around ：         则返回 AROUND
+		* */
 		RootBeanDefinition adviceDefinition = new RootBeanDefinition(getAdviceClass(adviceElement, parserContext));
 		adviceDefinition.setSource(parserContext.extractSource(adviceElement));
-
+		/*
+		* 下边就是给当前的 BeanDefinition 设置属性值
+		* */
 		adviceDefinition.getPropertyValues().add(ASPECT_NAME_PROPERTY, aspectName);
 		adviceDefinition.getPropertyValues().add(DECLARATION_ORDER_PROPERTY, order);
 
@@ -387,7 +462,23 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
 
 		ConstructorArgumentValues cav = adviceDefinition.getConstructorArgumentValues();
 		cav.addIndexedArgumentValue(METHOD_INDEX, methodDef);
-
+		/*
+		* 解析 point-cut 属性   就是 <aop:pointcut>，
+		* 解析出  <aop:around method="around" pointcut-ref="myPoint"></aop:around>
+		* 中的 pointcut-ref="myPoint"
+		*
+		*
+		* addIndexedArgumentValue！！！可以设置参数的位置
+		*
+		*			<bean id="s" class="com.sztu.spring.Person">
+		*				<constructor-arg index=""
+		*			</bean>
+		*
+		* 方法设置在 0，表达式放在 1， RootBeanDefinition 放在 2
+		* cav.addIndexedArgumentValue(METHOD_INDEX, methodDef);
+		* cav.addIndexedArgumentValue(POINTCUT_INDEX, pointcut);
+		* cav.addIndexedArgumentValue(ASPECT_INSTANCE_FACTORY_INDEX, aspectFactoryDef);
+		* */
 		Object pointcut = parsePointcutProperty(adviceElement, parserContext);
 		if (pointcut instanceof BeanDefinition) {
 			cav.addIndexedArgumentValue(POINTCUT_INDEX, pointcut);
@@ -435,17 +526,23 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
 	 */
 	private AbstractBeanDefinition parsePointcut(Element pointcutElement, ParserContext parserContext) {
 		String id = pointcutElement.getAttribute(ID);
+		/* 获取 表达式字符串 */
 		String expression = pointcutElement.getAttribute(EXPRESSION);
 
 		AbstractBeanDefinition pointcutDefinition = null;
 
 		try {
 			this.parseState.push(new PointcutEntry(id));
+			/*
+			* 切点定义信息 pointcutDefinition
+			* 现在这个 BeanDefinition的 beanClass = AspectJExpressionPointcut
+			* */
 			pointcutDefinition = createPointcutDefinition(expression);
 			pointcutDefinition.setSource(parserContext.extractSource(pointcutElement));
 
 			String pointcutBeanName = id;
 			if (StringUtils.hasText(pointcutBeanName)) {
+				/* 把point-cut的BeanDefinition注册到BeanFactory */
 				parserContext.getRegistry().registerBeanDefinition(pointcutBeanName, pointcutDefinition);
 			}
 			else {
@@ -483,6 +580,12 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
 			pointcutDefinition.setSource(parserContext.extractSource(element));
 			return pointcutDefinition;
 		}
+		/*
+		* <aop:around method="around" pointcut-ref="myPoint"></aop:around>
+		* 包含 pointcut-ref，指向一个 myPoint
+		* 而且 myPoint 是一个表达式
+		* expression="execution(Integer com.sztu.spring.aopTest.MyCalculator.*(Integer,Integer))"
+		*  */
 		else if (element.hasAttribute(POINTCUT_REF)) {
 			String pointcutRef = element.getAttribute(POINTCUT_REF);
 			if (!StringUtils.hasText(pointcutRef)) {

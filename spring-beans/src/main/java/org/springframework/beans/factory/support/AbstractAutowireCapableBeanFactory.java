@@ -424,7 +424,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			throws BeansException {
 
 		Object result = existingBean;
-		for (BeanPostProcessor processor : getBeanPostProcessors()) { // BeanPostProcessor可能有多个，BFPP也可能有多个
+		for (BeanPostProcessor processor : getBeanPostProcessors()) {
 			Object current = processor.postProcessBeforeInitialization(result, beanName);
 			if (current == null) {
 				return result;
@@ -538,6 +538,29 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			* 是否执行doCreateBean取决于 之前定义的BeanPostProcessor中是否包含了提前创建Bean对象的BeanPostProcessor，
 			* 如果包含就提前创建，如果不包含才继续往下执行 doCreateBean
 			* */
+			/*
+			* 【【【AOP 的时候需要看的注释】】】
+			*   shouldSkip() 方法中 获取所有的 Advisors
+			*
+			*		 findCandidateAdvisors() 创建bean
+			*
+			*		 创建bean,并添加到 List 中，待返回
+			*
+			*		 此处创建对象有意思的地方在于：之前创建一个半成品对象，是直接反射调用无参构造，然后调用Set方法去给属性赋值，所谓的实例化初始化时分开的
+			*		 但是，在这些Advisor类中没有无参构造，只有一个有参构造，所以在这里创建 Advisor对象的时候，我必须先把有参构造方法中
+			*		 	要求的参数先创建好。所以这里的对象的创造，是需要很多层的嵌套的（跨方法递归的）。
+			*
+			*		        		          		   		 { -----> MethodLocatingFactoryBean
+			*			Advisor#0--#4 --->   adviceDef --->  { -----> expression="execution(Integer com.sztu.spring.aopTest.MyCalculator.*(Integer,Integer))"
+			*						                 	     { -----> SimpleBeanFactoryAwareAspectInstanceFactory
+			*
+			*		 意思就是说在创建 Advisor 的时候， 三个嵌套对象也要创建好
+			* */
+			/*
+			 * 【【【AOP 的时候需要看的注释】】】即便是普通对象也返回空，我们要记得开始这个逻辑的入口，“给BPP一个机会返回代理对象”，
+			 * 其实主要针对的事用户自定义的Bean before Instantiation 中返回代理对象
+			 * 如果开启了 AOP ，那是一个标准化的代理创建流程，而这里更侧重于用户自定的方式返回代理，所以此时也是返回空。  【【【即使一个对象需要被代理，那么这个对象也要被创建，不过创建完是要被替换的】】】
+			 *  */
 			Object bean = resolveBeforeInstantiation(beanName, mbdToUse);
 			if (bean != null) {
 				return bean;
@@ -733,6 +756,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		 *
 		 * 提前暴露 ！！！ 就是 只完成了实例化 还没完成初始化，后续的时候在为其补充对应的属性值
 		 * */
+
+		/* 判断当前 bean 是否需要提前暴露：单例 && 允许循环依赖 && 当前 Bean正在创建过程中，  检测循环依赖 */
 		boolean earlySingletonExposure = (mbd.isSingleton() && this.allowCircularReferences &&
 				isSingletonCurrentlyInCreation(beanName));
 		if (earlySingletonExposure) {
@@ -806,6 +831,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			}
 		}
 
+		/*
+		* 检测到有对象依赖当前对象
+		* */
 		if (earlySingletonExposure) {
 			Object earlySingletonReference = getSingleton(beanName, false);
 			if (earlySingletonReference != null) {
@@ -1330,8 +1358,11 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			*
 			* 但是即使我们自己自定义了 MyInstantiationAwareBeanPostProcessor 实现了 InstantiationAwareBeanPostProcessor接口
 			* 在注册BeanPostProcessor 时，也就是refresh()方法中的registerBeanPostProcessors(beanFactory);中进行getBean操作时
-			*  hasInstantiationAwareBeanPostProcessors()判断仍是false，
+			*  hasInstantiationAwareBeanPostProcessors()判断仍是false，等这个Bean创建完了，创建之后的Bean的时候这个判断才是true。
 			* 所以我们自己创建的 BeanPostProcessor 并不会创建代理对象，而是严格按照 doCreateBean 的流程走完
+			*
+			* 	【上边这句话就是的意思就是创建 MyInstantiationAwareBeanPostProcessor 这个Bean的时候，因为容器中现在没有 这个类型的 BPP】
+			* 	【所以 hasInstantiationAwareBeanPostProcessors()仍然是 false， 等这个Bean创建完了，判断就是true了】
 			* ==================================================================================================
 			* ==================================================================================================
 			*
@@ -1342,6 +1373,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			if (!mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
 				Class<?> targetType = determineTargetType(beanName, mbd);
 				if (targetType != null) {
+					/*
+					* 在 before 中可以使用代理的方式创建Bean，然后创建出来之后再从 after 中处理刚创建出来的Bean
+					* */
 					bean = applyBeanPostProcessorsBeforeInstantiation(targetType, beanName);
 					if (bean != null) {
 						bean = applyBeanPostProcessorsAfterInitialization(bean, beanName);
@@ -1369,6 +1403,13 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		for (BeanPostProcessor bp : getBeanPostProcessors()) {
 			if (bp instanceof InstantiationAwareBeanPostProcessor) {
 				InstantiationAwareBeanPostProcessor ibp = (InstantiationAwareBeanPostProcessor) bp;
+				/*
+				* ======================================================
+				* ======================================================
+				* 在创建第一个Bean对象之前需要吧所有的 AOP 相关的Bean全部创建完毕 ，
+				* 所以在创建第一个Bean的时候，这里find找到所有的Advisor然后先实例化
+				* ======================================================
+				* */
 				Object result = ibp.postProcessBeforeInstantiation(beanClass, beanName);
 				if (result != null) {
 					return result;
@@ -1458,8 +1499,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		* 2.自动装配模式为 构造函数自动装配
 		* 3.给BeanDefinition中设置了构造参数值
 		* 4.有参与构造函数列表的参数
-		*
-		* mbd.hasConstructorArgumentValues() 获取的就是 XML配置文件中如果使用构造器注入的话，就会获取到注入的属性
+		*   mbd.hasConstructorArgumentValues() 获取的就是 XML配置文件中如果使用构造器注入的话，就会获取到注入的属性
+		*			======AOP相关：创建 Advisor 对象的时候，由于Advisor需要一个Advice对象作为参数，而且Advice需要三个参数（method，表达式，工厂）都会使用这个方法
 		* */
 		if (ctors != null || mbd.getResolvedAutowireMode() == AUTOWIRE_CONSTRUCTOR ||
 				mbd.hasConstructorArgumentValues() || !ObjectUtils.isEmpty(args)) {
@@ -1673,8 +1714,18 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 */
 	protected BeanWrapper autowireConstructor(
 			String beanName, RootBeanDefinition mbd, @Nullable Constructor<?>[] ctors, @Nullable Object[] explicitArgs) {
-
-		return new ConstructorResolver(this).autowireConstructor(beanName, mbd, ctors, explicitArgs);
+		/*
+		* AspectJPointcutAdvisor 的构造方法需要传入  AbstractAspectJAdvice
+		*
+		* 									  { AspectJAfterAdvice            }
+		* 									  { AspectJAfterReturningAdvice   }
+		* AbstractAspectJAdvice 的实现子类有 -> { AspectJAfterThrowingAdvice    } --> 每个子类的构造方法需要传入 Method + AspectJExpressionPointcut + AspectInstanceFactory
+		* 									  { AspectJAroundAdvice           }
+		*									  { AspectJMethodBeforeAdvice     }
+		*
+		* 所以在创建 AspectJPointcutAdvisor对象的时候 需要先创建   Advice + （ Method  AspectJExpressionPointcut  AspectInstanceFactory ）
+		* */
+ 		return new ConstructorResolver(this).autowireConstructor(beanName, mbd, ctors, explicitArgs);
 	}
 
 	/**
@@ -1708,6 +1759,11 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			for (BeanPostProcessor bp : getBeanPostProcessors()) {
 				if (bp instanceof InstantiationAwareBeanPostProcessor) {
 					InstantiationAwareBeanPostProcessor ibp = (InstantiationAwareBeanPostProcessor) bp;
+					/*
+					* 如果自己实现了 InstantiationAwareBeanPostProcessor 接口中，自己重写了 postProcessAfterInstantiation方法
+					* 在方法中给这个 类型的 bean 赋值，而且不希望自己被赋的值被下边的操作覆盖掉，所以就要在
+					* postProcessAfterInstantiation方法 中返回 false，  ！false = true 直接跳出当前 populateBean方法执行
+					* */
 					if (!ibp.postProcessAfterInstantiation(bw.getWrappedInstance(), beanName)) {
 						return;
 					}
@@ -2123,6 +2179,10 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		BeanDefinitionValueResolver valueResolver = new BeanDefinitionValueResolver(this, beanName, mbd, converter);
 
 		// Create a deep copy, resolving any references for values.
+		/*
+		* 创建一个深拷贝数组， 数组中保存所有的解析到的当前Bean创建时依赖的 Bean对象，
+		* 但是暂时没有给当前创建的 Bean 进行赋值
+		* */
 		List<PropertyValue> deepCopy = new ArrayList<>(original.size());
 		boolean resolveNecessary = false;
 		for (PropertyValue pv : original) {
@@ -2155,7 +2215,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 					if (convertible) {
 						pv.setConvertedValue(convertedValue); /* 把解析到的值存入到每个 PropertyValue 的 convertedValue 属性中 */
 					}
-					deepCopy.add(pv);
+					deepCopy.add(pv); /* 转换之后的值加入到深拷贝的数组 */
 				}
 				else if (convertible && originalValue instanceof TypedStringValue &&
 						!((TypedStringValue) originalValue).isDynamic() &&
@@ -2175,7 +2235,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		// Set our (possibly massaged) deep copy.
 		try {
-			bw.setPropertyValues(new MutablePropertyValues(deepCopy)); /* 从刚才的PropertyValue存入的convertedValue中 获取相应的属性值，并对象相应的属性赋值 */
+			bw.setPropertyValues(new MutablePropertyValues(deepCopy)); /* 从刚才的 deepCopy 存入的convertedValue中 获取相应的属性值，并对象相应的属性赋值 */
 		}
 		catch (BeansException ex) {
 			throw new BeanCreationException(
@@ -2228,7 +2288,17 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		else {
 			/*
 			* 如果bean实现了Aware接口的话，在此处
-			* */
+			* 里边处理了三个  BeanFactoryAware BeanClassLoaderAware BeanNameAware
+			* 正好对应前边忽略 ignore了三个
+			*
+			* obtainFreshBeanFactory() ->  refreshBeanFactory() -> createBeanFactory() -> new DefaultListableBeanFactory(getInternalParentBeanFactory())
+			*
+			* 		                                         {    ignoreDependencyInterface(BeanNameAware.class);
+			* 		-> AbstractAutowireCapableBeanFactory -> {    ignoreDependencyInterface(BeanFactoryAware.class);
+			* 												 {    ignoreDependencyInterface(BeanClassLoaderAware.class);
+			*
+			* 为什么单独忽略他们三个呢？这里又为什么单独处理他们三个呢？
+			 * */
 			invokeAwareMethods(beanName, bean);
 		}
 
@@ -2243,6 +2313,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		try {
 			/*
 			* init-method也在此处执行
+			* 如果 bean 对象是 InitializingBean 类型的，那么进入判断，执行这个对象的 afterPropertiesSet（）方法
+			* 在 afterPropertiesSet（） 可以自己随便改这个类型的bean的属性值
 			* */
 			invokeInitMethods(beanName, wrappedBean, mbd);
 		}
@@ -2292,7 +2364,15 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 */
 	protected void invokeInitMethods(String beanName, Object bean, @Nullable RootBeanDefinition mbd)
 			throws Throwable {
-
+		/*
+		* 如果当前bean对象是 InitializingBean 类型的，那么进入判断，执行这个对象的 afterPropertiesSet（）方法
+		*
+		* InitializingBean是干啥的呢？
+		* 实现这些接口的Bean 需要在BeanFactory设置了它们的所有属性后做出反应
+		* 比如 Person 实现了这个接口，在这个方法里进行 personName 属性值的长度检验，大于25字符会怎么 小于25字符又会怎么
+		*
+		* 就是在 afterPropertiesSet（） 可以自己随便改这个类型的bean的属性值了
+		* */
 		boolean isInitializingBean = (bean instanceof InitializingBean);
 		if (isInitializingBean && (mbd == null || !mbd.isExternallyManagedInitMethod("afterPropertiesSet"))) {
 			if (logger.isTraceEnabled()) {
@@ -2314,6 +2394,10 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			}
 		}
 
+		/*
+		* 如果满足这些条件，继续调用 init 方法。
+		* 目测是 @PostConstruct 标记的方法吧
+		* */
 		if (mbd != null && bean.getClass() != NullBean.class) {
 			String initMethodName = mbd.getInitMethodName();
 			if (StringUtils.hasLength(initMethodName) &&

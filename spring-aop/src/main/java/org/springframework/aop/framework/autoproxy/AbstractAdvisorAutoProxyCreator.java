@@ -93,10 +93,22 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	 * @see #extendAdvisors
 	 */
 	protected List<Advisor> findEligibleAdvisors(Class<?> beanClass, String beanName) {
-		List<Advisor> candidateAdvisors = findCandidateAdvisors();
+		List<Advisor> candidateAdvisors = findCandidateAdvisors(); /* 一级缓存中直接获取 advisor */
+		/*
+		* 对获取到的Advisor进行判断，看其切面定义是否可以应用到当前bean，从而得到最终可以在当前对象创建动态代理时需要应用的对象
+		*  */
 		List<Advisor> eligibleAdvisors = findAdvisorsThatCanApply(candidateAdvisors, beanClass, beanName);
+		/*
+		* 提供hook()，用于对目标Advisor进行扩展
+		* 往 可用的 advisor 列表中新加入一个 ExposeInvocationInterceptor，并且放到第一个位置
+		* ExposeInvocationInterceptor 有什么用呢？
+		* 在后续任何调用链环节，只需要用当前的 MethodInvocation 就用 ExposeInvocationInterceptor.currentInvocation()静态方法获得。
+		* */
 		extendAdvisors(eligibleAdvisors);
 		if (!eligibleAdvisors.isEmpty()) {
+			/*
+			* 拓扑排序对当前的可以用到的切面们进行排序
+			* */
 			eligibleAdvisors = sortAdvisors(eligibleAdvisors);
 		}
 		return eligibleAdvisors;
@@ -108,6 +120,22 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	 */
 	protected List<Advisor> findCandidateAdvisors() {
 		Assert.state(this.advisorRetrievalHelper != null, "No BeanFactoryAdvisorRetrievalHelper available");
+		/*
+		 * 创建bean,并添加到 List 中，待返回
+		 *
+		 * 此处创建对象有意思的地方在于：之前创建一个半成品对象，是直接反射调用无参构造，然后调用Set方法去给属性赋值，所谓的实例化初始化时分开的
+		 * 但是，在这些Advisor类中没有无参构造，只有一个有参构造，所以在这里创建 Advisor对象的时候，我必须先把有参构造方法中
+		 * 	要求的参数先创建好。所以这里的对象的创造，是需要很多层的嵌套的（跨方法递归的）。
+		 *
+		 *        		          		   { -----> MethodLocatingFactoryBean
+		 *	Advisor --->   adviceDef --->  { -----> expression="execution(Integer com.sztu.spring.aopTest.MyCalculator.*(Integer,Integer))"
+		 *		|		      |            { -----> SimpleBeanFactoryAwareAspectInstanceFactory
+		 * 		|			  |								|
+		 *	  有参			有参							三个无参，但是第二个对象 expression 是 RunTimeReference，而且作用域是原型模式
+		 *																	后边这四个对象是原型模式的，只有advisor是单例模式的，根本不放进一级缓存
+		 * 意思就是说在创建 Advisor 的时候， 三个嵌套对象也要创建好
+		 *
+		 * */
 		return this.advisorRetrievalHelper.findAdvisorBeans();
 	}
 
@@ -124,7 +152,7 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 			List<Advisor> candidateAdvisors, Class<?> beanClass, String beanName) {
 
 		ProxyCreationContext.setCurrentProxiedBeanName(beanName);
-		try {
+		try { /* 从候选的各个 Advisor中扎到合适的正在创建的实例对象的通知器 */
 			return AopUtils.findAdvisorsThatCanApply(candidateAdvisors, beanClass);
 		}
 		finally {

@@ -110,7 +110,7 @@ class BeanDefinitionValueResolver {
 		// to another bean to be resolved.
 		if (value instanceof RuntimeBeanReference) {
 			RuntimeBeanReference ref = (RuntimeBeanReference) value;
-			return resolveReference(argName, ref);
+			return resolveReference(argName, ref); /* 比如我在 star 中引用了 address对象，在创建star的时候，address还没创建，在这解析完引用之后直接getBean（“address”） */
 		}
 		else if (value instanceof RuntimeBeanNameReference) {
 			String refName = ((RuntimeBeanNameReference) value).getBeanName();
@@ -127,8 +127,12 @@ class BeanDefinitionValueResolver {
 			return resolveInnerBean(argName, bdHolder.getBeanName(), bdHolder.getBeanDefinition());
 		}
 		else if (value instanceof BeanDefinition) {
+			/*
+			* 使用构造函数创建对象的时候，如果构造函数中的参数值是一个 BeanDefinition，就需要在创建此对象的时候，先把参数对象创建完毕
+			* */
 			// Resolve plain BeanDefinition, without contained name: use dummy name.
 			BeanDefinition bd = (BeanDefinition) value;
+			/* 给参数的这个 Bean 去个名字， 叫做innerBean#45645 乱七八糟的数字名 */
 			String innerBeanName = "(inner bean)" + BeanFactoryUtils.GENERATED_BEAN_NAME_SEPARATOR +
 					ObjectUtils.getIdentityHexString(bd);
 			return resolveInnerBean(argName, innerBeanName, bd);
@@ -173,15 +177,15 @@ class BeanDefinitionValueResolver {
 		* */
 		else if (value instanceof ManagedList) {
 			// May need to resolve contained runtime references.
-			return resolveManagedList(argName, (List<?>) value); /* List 中的 Bean 创建*/
+			return resolveManagedList(argName, (List<?>) value); /* 解析List中的对象，如果List中还有对象，递归创建 List 中的 Bean*/
 		}
 		else if (value instanceof ManagedSet) {
 			// May need to resolve contained runtime references.
-			return resolveManagedSet(argName, (Set<?>) value); /* Set 中的 Bean 创建*/
+			return resolveManagedSet(argName, (Set<?>) value); /* 解析Set中的对象，如果Set中还有对象，递归创建 Set 中的 Bean*/
 		}
 		else if (value instanceof ManagedMap) {
 			// May need to resolve contained runtime references.
-			return resolveManagedMap(argName, (Map<?, ?>) value); /* Map 中的 Bean 创建*/
+			return resolveManagedMap(argName, (Map<?, ?>) value); /* 解析Map中的对象，如果Map中还有对象，递归创建 Map 中的 Bean*/
 		}
 		else if (value instanceof ManagedProperties) {  /* Properties 中的 Bean 创建*/
 			Properties original = (Properties) value;
@@ -335,6 +339,10 @@ class BeanDefinitionValueResolver {
 					resolvedName = namedBean.getBeanName();
 				}
 				else {
+					/*
+					 * 比如我在 star 中引用了 address对象，在创建star的时候，
+					 * address还没创建，在这解析完引用之后直接getBean（“address”）
+					 */
 					resolvedName = String.valueOf(doEvaluate(ref.getBeanName()));
 					bean = this.beanFactory.getBean(resolvedName);
 				}
@@ -370,7 +378,7 @@ class BeanDefinitionValueResolver {
 			if (mbd.isSingleton()) {
 				actualInnerBeanName = adaptInnerBeanName(innerBeanName);
 			}
-			this.beanFactory.registerContainedBean(actualInnerBeanName, this.beanName);
+			this.beanFactory.registerContainedBean(actualInnerBeanName, this.beanName); /* 注册bean到beanFactory  */
 			// Guarantee initialization of beans that the inner bean depends on.
 			String[] dependsOn = mbd.getDependsOn();
 			if (dependsOn != null) {
@@ -380,7 +388,7 @@ class BeanDefinitionValueResolver {
 				}
 			}
 			// Actually create the inner bean instance now...
-			Object innerBean = this.beanFactory.createBean(actualInnerBeanName, mbd, null);
+			Object innerBean = this.beanFactory.createBean(actualInnerBeanName, mbd, null); /* 创建这个 参数中要用的bean  */
 			if (innerBean instanceof FactoryBean) {
 				boolean synthetic = mbd.isSynthetic();
 				innerBean = this.beanFactory.getObjectFromFactoryBean(
@@ -421,6 +429,10 @@ class BeanDefinitionValueResolver {
 	 * For each element in the managed array, resolve reference if necessary.
 	 */
 	private Object resolveManagedArray(Object argName, List<?> ml, Class<?> elementType) {
+		/*
+		 * 递归解析的过程， 比如xml文件中 bean Person对象中引用了一个map对象，
+		 * map中又有其他的bean，解析的过程中包含了创建了bean的过程
+		 * */
 		Object resolved = Array.newInstance(elementType, ml.size());
 		for (int i = 0; i < ml.size(); i++) {
 			Array.set(resolved, i, resolveValueIfNecessary(new KeyedArgName(argName, i), ml.get(i)));
@@ -432,6 +444,10 @@ class BeanDefinitionValueResolver {
 	 * For each element in the managed list, resolve reference if necessary.
 	 */
 	private List<?> resolveManagedList(Object argName, List<?> ml) {
+		/*
+		 * 递归解析的过程， 比如xml文件中 bean Person对象中引用了一个map对象，
+		 * map中又有其他的bean，解析的过程中包含了创建了bean的过程
+		 * */
 		List<Object> resolved = new ArrayList<>(ml.size());
 		for (int i = 0; i < ml.size(); i++) {
 			resolved.add(resolveValueIfNecessary(new KeyedArgName(argName, i), ml.get(i)));
@@ -446,6 +462,10 @@ class BeanDefinitionValueResolver {
 		Set<Object> resolved = new LinkedHashSet<>(ms.size());
 		int i = 0;
 		for (Object m : ms) {
+			/*
+			 * 递归解析的过程， 比如xml文件中 bean Person对象中引用了一个map对象，
+			 * map中又有其他的bean，解析的过程中包含了创建了bean的过程
+			 * */
 			resolved.add(resolveValueIfNecessary(new KeyedArgName(argName, i), m));
 			i++;
 		}
@@ -457,6 +477,10 @@ class BeanDefinitionValueResolver {
 	 */
 	private Map<?, ?> resolveManagedMap(Object argName, Map<?, ?> mm) {
 		Map<Object, Object> resolved = new LinkedHashMap<>(mm.size());
+		/*
+		 * 递归解析的过程， 比如xml文件中 bean Person对象中引用了一个map对象，
+		 * map中又有其他的bean，解析的过程中包含了创建了bean的过程
+		 * */
 		mm.forEach((key, value) -> {
 			Object resolvedKey = resolveValueIfNecessary(argName, key);
 			Object resolvedValue = resolveValueIfNecessary(new KeyedArgName(argName, key), value);

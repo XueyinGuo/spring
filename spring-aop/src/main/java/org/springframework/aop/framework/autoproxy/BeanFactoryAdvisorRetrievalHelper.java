@@ -64,14 +64,24 @@ public class BeanFactoryAdvisorRetrievalHelper {
 	 * @return the list of {@link org.springframework.aop.Advisor} beans
 	 * @see #isEligibleBean
 	 */
+	/*
+	* 找到当前容器中存在的 Advisor
+	* */
 	public List<Advisor> findAdvisorBeans() {
 		// Determine list of advisor bean names, if not cached already.
 		String[] advisorNames = this.cachedAdvisorBeanNames;
 		if (advisorNames == null) {
 			// Do not initialize FactoryBeans here: We need to leave all regular beans
 			// uninitialized to let the auto-proxy creator apply to them!
+			/*
+			* 获取当前BeanFactory 和 当前容器的父BeanFactory 中所有Advisor类型的Bean的名称
+			* 递归调用，一直找到最上一层位置，找到所有的 Advisor
+			*
+			* 这个方法和什么类似呢？ 在 BFPP的时候 你是否记得 getNameForType(BDRPP.class)筛选所有的实现了 BDRPP 接口的 Bean名称
+			* */
 			advisorNames = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
 					this.beanFactory, Advisor.class, true, false);
+			/* 缓存所有的 Advisor名字 */
 			this.cachedAdvisorBeanNames = advisorNames;
 		}
 		if (advisorNames.length == 0) {
@@ -81,6 +91,7 @@ public class BeanFactoryAdvisorRetrievalHelper {
 		List<Advisor> advisors = new ArrayList<>();
 		for (String name : advisorNames) {
 			if (isEligibleBean(name)) {
+				/* 如果当前bean还创建过程中，就略过，创建完成之后再为其判断是否需要织入切面逻辑 */
 				if (this.beanFactory.isCurrentlyInCreation(name)) {
 					if (logger.isTraceEnabled()) {
 						logger.trace("Skipping currently created advisor '" + name + "'");
@@ -88,6 +99,22 @@ public class BeanFactoryAdvisorRetrievalHelper {
 				}
 				else {
 					try {
+						/*
+						* 创建bean,并添加到 List 中，待返回
+						*
+						* 此处创建对象有意思的地方在于：之前创建一个半成品对象，是直接反射调用无参构造，然后调用Set方法去给属性赋值，所谓的实例化初始化时分开的
+						* 但是，在这些Advisor类中没有无参构造，只有一个有参构造，所以在这里创建 Advisor对象的时候，我必须先把有参构造方法中
+						* 	要求的参数先创建好。所以这里的对象的创造，是需要很多层的嵌套的（跨方法递归的）。
+						*
+						*        		          		   { -----> MethodLocatingFactoryBean
+						*	Advisor --->   adviceDef --->  { -----> expression="execution(Integer com.sztu.spring.aopTest.MyCalculator.*(Integer,Integer))"
+						*		|		      |            { -----> SimpleBeanFactoryAwareAspectInstanceFactory
+						* 		|			  |								|
+						*	  有参			有参							三个无参，但是第二个对象 expression 是 RunTimeReference，而且作用域是原型模式
+						*														后边这四个对象是原型模式的，只有advisor是单例模式的，根本不放进一级缓存
+						* 意思就是说在创建 Advisor 的时候， 三个嵌套对象也要创建好
+						*
+						* */
 						advisors.add(this.beanFactory.getBean(name, Advisor.class));
 					}
 					catch (BeanCreationException ex) {

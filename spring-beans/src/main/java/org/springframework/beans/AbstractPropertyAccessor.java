@@ -101,7 +101,7 @@ public abstract class AbstractPropertyAccessor extends TypeConverterSupport impl
 				// here, if there is a critical failure such as no matching field.
 				// We can attempt to deal only with less serious exceptions.
 				try {
-					setPropertyValue(pv); /* 获取相应的属性值，并对象赋值 */
+					setPropertyValue(pv); /* 获取相应的属性值，并给对象赋值 */
 				}
 				catch (NotWritablePropertyException ex) {
 					if (!ignoreUnknown) {

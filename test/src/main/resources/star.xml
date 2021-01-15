@@ -7,7 +7,7 @@
 
 	<bean id="star" class="com.sztu.spring.myRegisterEditor.Star">
 		<property name="name" value="The Falling Star!"></property>
-		<property name="address" value="重庆市_重庆市_hd区_皓阳园_三号楼"></property>
+		<property name="address" value="ss_ss_hd区_皓阳s_三ss"></property>
 	</bean>
 
 	<bean class="org.springframework.beans.factory.config.CustomEditorConfigurer">

@@ -64,16 +64,32 @@ public abstract class AopNamespaceUtils {
 
 	public static void registerAspectJAutoProxyCreatorIfNecessary(
 			ParserContext parserContext, Element sourceElement) {
-
+		/*
+		* 注册一些 名为internal 的 AOP相关的 BeanDefinition
+		* 这不就跟 <context:component-scan>一样吗？？？
+		* */
 		BeanDefinition beanDefinition = AopConfigUtils.registerAspectJAutoProxyCreatorIfNecessary(
 				parserContext.getRegistry(), parserContext.extractSource(sourceElement));
+		/*
+		* 如果指定proxy-target-class为true   则使用CGLib代理，否则使用JDK
+		* 其实这个值就是 AspectJAwareAdvisorAutoProxyCreator类的 proxyTargetClass属性
+		* */
 		useClassProxyingIfNecessary(parserContext.getRegistry(), sourceElement);
+		/*
+		* 注册到spring的bean工厂中，再次校验是否已经注册
+		*  */
 		registerComponentIfNecessary(beanDefinition, parserContext);
 	}
 
 	public static void registerAspectJAnnotationAutoProxyCreatorIfNecessary(
 			ParserContext parserContext, Element sourceElement) {
-
+		/*
+		* 注册 AutoProxyCreator，名为 internalAutoProxyCreator 的 BeanDefinition
+		* beanClass 为 AnnotationAwareAspectJAutoProxyCreator
+		* AnnotationAwareAspectJAutoProxyCreator 实现了 BeanPostProcessor -> InstantiationAwareBeanPostProcessor -> SmartInstantiationAwareBeanPostProcessor
+		*
+		* 是不是之后用这个BeanDefinition创建出来的 Bean 去扫描，标了@Component @Aspect 的Bean中的before after 方法等等操作？？？
+		* */
 		BeanDefinition beanDefinition = AopConfigUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary(
 				parserContext.getRegistry(), parserContext.extractSource(sourceElement));
 		useClassProxyingIfNecessary(parserContext.getRegistry(), sourceElement);
@@ -82,6 +98,11 @@ public abstract class AopNamespaceUtils {
 
 	private static void useClassProxyingIfNecessary(BeanDefinitionRegistry registry, @Nullable Element sourceElement) {
 		if (sourceElement != null) {
+			/*
+			* SpringAop 部分使用JDK动态代理或者CGLib来为目标创建代理，如果被代理的目标对象实现了至少一个接口
+			* 则会使用JDK动态代理，所有该目标类的实现接口都将被代理，
+			* 若该目标对象没有实现任何接口，创建一个CGLib子类
+			* */
 			boolean proxyTargetClass = Boolean.parseBoolean(sourceElement.getAttribute(PROXY_TARGET_CLASS_ATTRIBUTE));
 			if (proxyTargetClass) {
 				AopConfigUtils.forceAutoProxyCreatorToUseClassProxying(registry);

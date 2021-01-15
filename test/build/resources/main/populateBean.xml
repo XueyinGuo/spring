@@ -12,8 +12,8 @@
 	<bean id="person2" class="com.sztu.spring.populateBean.Person" autowire="byType"></bean>
 
 	<bean id="address" class="com.sztu.spring.populateBean.Address">
-		<property name="province" value="TianJin"></property>
-		<property name="city" value="HeDong"></property>
+		<property name="province" value="BJ"></property>
+		<property name="city" value="HD"></property>
 		<property name="town" value="SunCity"></property>
 	</bean>
 

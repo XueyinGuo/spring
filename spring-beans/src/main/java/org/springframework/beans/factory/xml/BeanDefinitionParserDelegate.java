@@ -1500,7 +1500,7 @@ public class BeanDefinitionParserDelegate {
 			return null;
 		}
 		/*
-		* 调用自定义的 NamespaceHandler 进行解析
+		* 调用各自的 NamespaceHandler 进行解析
 		* */
 		return handler.parse(ele, new ParserContext(this.readerContext, this, containingBd));
 	}

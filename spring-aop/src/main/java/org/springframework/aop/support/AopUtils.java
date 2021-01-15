@@ -223,11 +223,17 @@ public abstract class AopUtils {
 	 */
 	public static boolean canApply(Pointcut pc, Class<?> targetClass, boolean hasIntroductions) {
 		Assert.notNull(pc, "Pointcut must not be null");
-		if (!pc.getClassFilter().matches(targetClass)) {
+		/*
+		* 进行切点表达式的匹配，最重要的就是 ClassFilter 和 MethodMatcher 这两个方法的实现
+		* MethodMatcher 中有两个 matches 方法。
+		* 一个参数是只有 Method 对象的 targetClass，
+		* 另一个参数有 Method 对象和 targetClass 对象 还有一个参数是“Method方法的参数”
+		* */
+		if (!pc.getClassFilter().matches(targetClass)) { /* 查看 AspectJExpressionPointCut 是否与 目标类匹配 */
 			return false;
 		}
 
-		MethodMatcher methodMatcher = pc.getMethodMatcher();
+		MethodMatcher methodMatcher = pc.getMethodMatcher(); /* 进行完类校验之后进行方法级别的校验 */
 		if (methodMatcher == MethodMatcher.TRUE) {
 			// No need to iterate the methods if we're matching any method anyway...
 			return true;
@@ -239,13 +245,19 @@ public abstract class AopUtils {
 		}
 
 		Set<Class<?>> classes = new LinkedHashSet<>();
-		if (!Proxy.isProxyClass(targetClass)) {
+		if (!Proxy.isProxyClass(targetClass)) { /* 判断当前class是不是代理创建器 或者 切面 类，如果不是的话加到集合中待遍历 */
 			classes.add(ClassUtils.getUserClass(targetClass));
 		}
-		classes.addAll(ClassUtils.getAllInterfacesForClassAsSet(targetClass));
+		classes.addAll(ClassUtils.getAllInterfacesForClassAsSet(targetClass)); /* 获取到所有的targetClass实现的接口们，加入集合待遍历 */
 
 		for (Class<?> clazz : classes) {
+			/* 获取到Class中的所有方法 */
 			Method[] methods = ReflectionUtils.getAllDeclaredMethods(clazz);
+			/* 遍历每个方法，只要有一个方法能匹配到就返回true
+			* 这里一个问题就是：在一个目标中可能会有多个方法存在，有的方法是满足这个切点的匹配规则的
+			* 但是也可能有一些方法不匹配规则，这里检测的是只有一个Method满足切点规则就返回true了，
+			* 所以在运行时进行方法兰拦截的时候还会有一次运行时的方法切点规则匹配
+			*  */
 			for (Method method : methods) {
 				if (introductionAwareMethodMatcher != null ?
 						introductionAwareMethodMatcher.matches(method, targetClass, hasIntroductions) :
@@ -284,9 +296,9 @@ public abstract class AopUtils {
 		if (advisor instanceof IntroductionAdvisor) {
 			return ((IntroductionAdvisor) advisor).getClassFilter().matches(targetClass);
 		}
-		else if (advisor instanceof PointcutAdvisor) {
+		else if (advisor instanceof PointcutAdvisor) { /* 通常我们的Advisor 都是这个类型 */
 			PointcutAdvisor pca = (PointcutAdvisor) advisor;
-			return canApply(pca.getPointcut(), targetClass, hasIntroductions);
+			return canApply(pca.getPointcut(), targetClass, hasIntroductions); /* 获取Advisor中获取PointCut的实现类，这是 AspectJExpressionPointCut */
 		}
 		else {
 			// It doesn't have a pointcut so we assume it applies.
@@ -306,18 +318,27 @@ public abstract class AopUtils {
 		if (candidateAdvisors.isEmpty()) {
 			return candidateAdvisors;
 		}
-		List<Advisor> eligibleAdvisors = new ArrayList<>();
+		List<Advisor> eligibleAdvisors = new ArrayList<>(); /* 新建符合条件集合 */
 		for (Advisor candidate : candidateAdvisors) {
+			/*
+			* Advisor ->  { PointcutAdvisor : 这个东西时把一个方法包装成了一个 Advisor
+			* 			  {
+			* 			  { IntroductionAdvisor : 再从类级别上对其增强？？？？【不懂】
+			*  */
 			if (candidate instanceof IntroductionAdvisor && canApply(candidate, clazz)) {
 				eligibleAdvisors.add(candidate);
 			}
 		}
-		boolean hasIntroductions = !eligibleAdvisors.isEmpty();
+		boolean hasIntroductions = !eligibleAdvisors.isEmpty(); /* 当前的所有 Advisor 中是否存在刚才判断过的那种类型 */
 		for (Advisor candidate : candidateAdvisors) {
 			if (candidate instanceof IntroductionAdvisor) {
 				// already processed
 				continue;
 			}
+			/*
+			* 是否符合被代理类的要求的 Advisor，既要匹配类也要匹配方法, 【Advisor 中有两个属性值：advice + pointcut】其中 pointcut中包含又两个：classFilter + methodMatcher
+			* 匹配类用 ClassFilter ，方法用 MethodMatcher
+			* */
 			if (canApply(candidate, clazz, hasIntroductions)) {
 				eligibleAdvisors.add(candidate);
 			}

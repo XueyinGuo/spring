@@ -174,7 +174,7 @@ public class ComponentScanBeanDefinitionParser implements BeanDefinitionParser {
 		if (annotationConfig) {
 			Set<BeanDefinitionHolder> processorDefinitions =
 					/*
-					*  internal 的赋值操作， 并放进BeanDefinitionMap
+					*  internal 的赋值操作， 并放进 BeanDefinitionMap
 					* */
 					AnnotationConfigUtils.registerAnnotationConfigProcessors(readerContext.getRegistry(), source);
 			for (BeanDefinitionHolder processorDefinition : processorDefinitions) {

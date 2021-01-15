@@ -203,11 +203,17 @@ class ConstructorResolver {
 				minNrOfArgs = explicitArgs.length;
 			}
 			else {
-				/* 取得配置文件中的构造器参数 */
+				/* 从BeanDefinition中获取 创建对象时需要的参数，如果是advice类型的对象， advice中还需要三个对象 */
 				ConstructorArgumentValues cargs = mbd.getConstructorArgumentValues();
 				/* 承载解析后的构造函数参数的值 */
 				resolvedValues = new ConstructorArgumentValues();
-				/* 能解析到的参数个数 */
+				/*
+				* =================================================================
+				* =================================================================
+				* 如果创建当前Bean需要的参数的时候，这个参数Bean的创建也需要有参数，则在此方法创建
+				* =================================================================
+				* =================================================================
+				*  */
 				minNrOfArgs = resolveConstructorArguments(beanName, mbd, bw, cargs, resolvedValues);
 			}
 			/* 把所有public构造函数按照参数个数降序排序 */
@@ -733,7 +739,8 @@ class ConstructorResolver {
 				new BeanDefinitionValueResolver(this.beanFactory, beanName, mbd, converter);
 
 		int minNrOfArgs = cargs.getArgumentCount();
-
+		/* 当创建一个对象的所匹配的构造函数中所需要的参数不止一个的时候，跳入，
+		* 比如 在创建AOP所有的Bean的时候，AspectJAroundAdvice 等五个的时候，需要的参数有三个，method 表达式 factory， */
 		for (Map.Entry<Integer, ConstructorArgumentValues.ValueHolder> entry : cargs.getIndexedArgumentValues().entrySet()) {
 			int index = entry.getKey();
 			if (index < 0) {
@@ -748,7 +755,8 @@ class ConstructorResolver {
 				resolvedValues.addIndexedArgumentValue(index, valueHolder);
 			}
 			else {
-				Object resolvedValue =
+				/* 解析构造函数的参数，判断他是否是 RunTimeBeanReference， BeanDefinition 等等，然后如果是BeanDefinition，构造出innerBean对象 */
+				Object resolvedValue = /* ========================================================================================= */
 						valueResolver.resolveValueIfNecessary("constructor argument", valueHolder.getValue());
 				ConstructorArgumentValues.ValueHolder resolvedValueHolder =
 						new ConstructorArgumentValues.ValueHolder(resolvedValue, valueHolder.getType(), valueHolder.getName());
@@ -756,12 +764,13 @@ class ConstructorResolver {
 				resolvedValues.addIndexedArgumentValue(index, resolvedValueHolder);
 			}
 		}
-
+		/* 遍历 cargs 的泛型参数值列表，元素为 ConstructorArgumentValues.ValueHolder对象 */
 		for (ConstructorArgumentValues.ValueHolder valueHolder : cargs.getGenericArgumentValues()) {
 			if (valueHolder.isConverted()) {
 				resolvedValues.addGenericArgumentValue(valueHolder);
 			}
 			else {
+				/* 使用 valueResolver 解析出构造函数中实参所要用的对象 */
 				Object resolvedValue =
 						valueResolver.resolveValueIfNecessary("constructor argument", valueHolder.getValue());
 				ConstructorArgumentValues.ValueHolder resolvedValueHolder = new ConstructorArgumentValues.ValueHolder(
