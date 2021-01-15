@@ -1,4 +1,6 @@
-package com.szu.spring.proxy.jdk;
+package com.sztu.spring.proxy.jdk;
+
+import sun.security.action.GetBooleanAction;
 
 public class TestJDKProxy_2 {
 
