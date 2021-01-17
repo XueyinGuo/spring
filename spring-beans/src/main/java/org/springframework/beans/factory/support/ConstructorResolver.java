@@ -771,7 +771,7 @@ class ConstructorResolver {
 			}
 			else {
 				/* 使用 valueResolver 解析出构造函数中实参所要用的对象 */
-				Object resolvedValue =
+				Object resolvedValue = /*===============================================================================*/
 						valueResolver.resolveValueIfNecessary("constructor argument", valueHolder.getValue());
 				ConstructorArgumentValues.ValueHolder resolvedValueHolder = new ConstructorArgumentValues.ValueHolder(
 						resolvedValue, valueHolder.getType(), valueHolder.getName());

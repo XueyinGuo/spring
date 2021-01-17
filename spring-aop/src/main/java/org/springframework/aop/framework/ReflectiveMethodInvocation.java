@@ -159,15 +159,27 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 	@Nullable
 	public Object proceed() throws Throwable {
 		// We start with an index of -1 and increment early.
+		/*
+		* 从索引 -1 开始的拦截器开始调用，并且按照顺序递增，如果拦截器中拦截器的迭代调用完毕，开始调用target函数，这个函数式通过反射机制完成的
+		* 其实实现在 AopUtils.invokeJoinpointUsingReflection 方法中
+		* */
 		if (this.currentInterceptorIndex == this.interceptorsAndDynamicMethodMatchers.size() - 1) {
-			return invokeJoinpoint();
+			return invokeJoinpoint(); /* 当 currentInterceptorIndex 最终等于5 的时候，说明 before 逻辑已经执行完了，到执行连接点方法的时候了！！！ */
 		}
-
+		/*
+		* 获取下一个要执行的拦截器，沿着定义好的顺序进行处理， 顺序还记得在哪里排好的吗？
+		* 是在获取到需要被代理对象的可用的Advisor列表的时候，有一个拓扑排序，在那时候排序就已经完成了。
+		* 那里就是为链条创建做准备的。
+		* */
 		Object interceptorOrInterceptionAdvice =
 				this.interceptorsAndDynamicMethodMatchers.get(++this.currentInterceptorIndex);
 		if (interceptorOrInterceptionAdvice instanceof InterceptorAndDynamicMethodMatcher) {
 			// Evaluate dynamic method matcher here: static part will already have
 			// been evaluated and found to match.
+			/*
+			* 这里对拦截器进行动态匹配的判断，这是对 pointcut 触发进行匹配的地方，如果与定义的pointcut匹配
+			* 那么这个advice将会得到执行
+			* */
 			InterceptorAndDynamicMethodMatcher dm =
 					(InterceptorAndDynamicMethodMatcher) interceptorOrInterceptionAdvice;
 			Class<?> targetClass = (this.targetClass != null ? this.targetClass : this.method.getDeclaringClass());
@@ -183,6 +195,9 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 		else {
 			// It's an interceptor, so we just invoke it: The pointcut will have
 			// been evaluated statically before this object was constructed.
+			/*
+			* 普通的拦截器，直接调用拦截器，将this作为参数传递以保证当前实例中调用链的执行
+			* */
 			return ((MethodInterceptor) interceptorOrInterceptionAdvice).invoke(this);
 		}
 	}

@@ -116,26 +116,34 @@ public abstract class AopProxyUtils {
 	 * @see DecoratingProxy
 	 */
 	static Class<?>[] completeProxiedInterfaces(AdvisedSupport advised, boolean decoratingProxy) {
+		/* 这里先获取到 目标类实现的 的所有的接口 */
 		Class<?>[] specifiedInterfaces = advised.getProxiedInterfaces();
+		/* 如果目标类没有任何接口 */
 		if (specifiedInterfaces.length == 0) {
 			// No user-specified interfaces: check whether target class is an interface.
 			Class<?> targetClass = advised.getTargetClass();
 			if (targetClass != null) {
+				/* 获取到目标类之后，先查看目标类是不是一个接口，如果是接口，就把当前类设置到应该实现的接口集合中 */
 				if (targetClass.isInterface()) {
 					advised.setInterfaces(targetClass);
 				}
-				else if (Proxy.isProxyClass(targetClass)) {
+				else if (Proxy.isProxyClass(targetClass)) { /* 目标类是不是 Proxy类型， */
 					advised.setInterfaces(targetClass.getInterfaces());
 				}
+				/*重新获取一遍接口  */
 				specifiedInterfaces = advised.getProxiedInterfaces();
 			}
 		}
+		/*
+		* 接口中有没有SpringProxy类型的接口，是否需要添加一个 SpringProxy 接口
+		* */
 		boolean addSpringProxy = !advised.isInterfaceProxied(SpringProxy.class);
+		/* 是否需要添加 Advised 接口呢？ */
 		boolean addAdvised = !advised.isOpaque() && !advised.isInterfaceProxied(Advised.class);
 		boolean addDecoratingProxy = (decoratingProxy && !advised.isInterfaceProxied(DecoratingProxy.class));
 		int nonUserIfcCount = 0;
 		if (addSpringProxy) {
-			nonUserIfcCount++;
+			nonUserIfcCount++; /* 需要添加 SpringProxy 接口的话， +1 */
 		}
 		if (addAdvised) {
 			nonUserIfcCount++;
@@ -143,6 +151,9 @@ public abstract class AopProxyUtils {
 		if (addDecoratingProxy) {
 			nonUserIfcCount++;
 		}
+		/*
+		* 把所有应该实现的接口都放在 proxiedInterfaces 集合中
+		* */
 		Class<?>[] proxiedInterfaces = new Class<?>[specifiedInterfaces.length + nonUserIfcCount];
 		System.arraycopy(specifiedInterfaces, 0, proxiedInterfaces, 0, specifiedInterfaces.length);
 		int index = specifiedInterfaces.length;

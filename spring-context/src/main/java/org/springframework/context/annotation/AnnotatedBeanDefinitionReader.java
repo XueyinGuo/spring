@@ -68,7 +68,7 @@ public class AnnotatedBeanDefinitionReader {
 	 * @see #setEnvironment(Environment)
 	 */
 	public AnnotatedBeanDefinitionReader(BeanDefinitionRegistry registry) {
-		this(registry, getOrCreateEnvironment(registry));
+		this(registry, getOrCreateEnvironment(registry)); /* new StandardEnvironment();  */
 	}
 
 	/**
@@ -134,7 +134,7 @@ public class AnnotatedBeanDefinitionReader {
 	 */
 	public void register(Class<?>... componentClasses) {
 		for (Class<?> componentClass : componentClasses) {
-			registerBean(componentClass);
+			registerBean(componentClass);  /* 把配置类也加载成一个 BeanDefinition 放入到 IOC容器 */
 		}
 	}
 
@@ -144,7 +144,7 @@ public class AnnotatedBeanDefinitionReader {
 	 * @param beanClass the class of the bean
 	 */
 	public void registerBean(Class<?> beanClass) {
-		doRegisterBean(beanClass, null, null, null, null);
+		doRegisterBean(beanClass, null, null, null, null); /* 把配置类也加载成一个 BeanDefinition 放入到 IOC容器 */
 	}
 
 	/**
@@ -282,7 +282,7 @@ public class AnnotatedBeanDefinitionReader {
 
 		BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(abd, beanName);
 		definitionHolder = AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
-		BeanDefinitionReaderUtils.registerBeanDefinition(definitionHolder, this.registry);
+		BeanDefinitionReaderUtils.registerBeanDefinition(definitionHolder, this.registry); /* 把配置类也加载成一个 BeanDefinition 放入到 IOC容器 */
 	}
 
 

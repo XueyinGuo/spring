@@ -62,8 +62,16 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 * Create a new AnnotationConfigApplicationContext that needs to be populated
 	 * through {@link #register} calls and then manually {@linkplain #refresh refreshed}.
 	 */
-	public AnnotationConfigApplicationContext() {
+	public AnnotationConfigApplicationContext() { /* 想创建子类对象必须先创建父类，父类构造方法中创建 DefaultListableBeanFactory */
+		/*
+		* 1. new StandardEnvironment();
+		* 2. <context:component-scan>的以internal为开头的BeanDefinition注入到 BeanFactory
+		* */
 		this.reader = new AnnotatedBeanDefinitionReader(this);
+		/*
+		* 1. 把刚刚创建的工厂也赋值给 这个对象中的属性
+		* 2. setEnvironment(environment);
+		* */
 		this.scanner = new ClassPathBeanDefinitionScanner(this);
 	}
 
@@ -159,7 +167,7 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	@Override
 	public void register(Class<?>... componentClasses) {
 		Assert.notEmpty(componentClasses, "At least one component class must be specified");
-		this.reader.register(componentClasses);
+		this.reader.register(componentClasses); /* 把配置类也加载成一个 BeanDefinition 放入到 IOC容器 */
 	}
 
 	/**

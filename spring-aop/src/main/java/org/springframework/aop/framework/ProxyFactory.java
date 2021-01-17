@@ -107,6 +107,20 @@ public class ProxyFactory extends ProxyCreatorSupport {
 	 * @return the proxy object
 	 */
 	public Object getProxy(@Nullable ClassLoader classLoader) {
+		/*
+		 * 判断目标类是否是接口，如果目标类是接口的话，则仍然使用JDK的方式生成代理
+		 *
+		 * 如果目标是  Proxy 类型，也是用 JDK生成代理
+		 * */
+		/*
+		 * 这段代码用来判断选择哪种创建代理的方式
+		 * config.isOptimize() 是否对代理类的生成使用优化策略，其作用和 isProxyTargetClass是一样的 默认是false
+		 * config.isProxyTargetClass() 是否使用CGLib的方式创建代理对象  默认是false
+		 * hasNoUserSuppliedProxyInterfaces(config) 目标类是否存在接口，且只有一个接口的时候类型不是SpringProxy类型
+		 * */
+
+
+		/*     决定哪一种代理方式().创建真正的代理对象() */
 		return createAopProxy().getProxy(classLoader);
 	}
 

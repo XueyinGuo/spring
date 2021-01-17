@@ -384,11 +384,11 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		* 【【【创建动态代理】】】
 		* */
 		// Create proxy if we have advice.
-		/* 先获取到创建当前代理对象的时候需要用到的所有的advisor，而且新加了一个ExposeInvocationInterceptor */
+		/* 先获取到创建当前代理对象的时候需要用到的所有的advisor，而且新加了一个ExposeInvocationInterceptor，一个至关重要的链条协调器！！！！！ */
 		Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, null);
 		if (specificInterceptors != DO_NOT_PROXY) {
 			this.advisedBeans.put(cacheKey, Boolean.TRUE);
-			Object proxy = createProxy(
+			Object proxy = createProxy( /* 创建代理对象！！！！！！！！！！！！！！！！！！！！！ */
 					bean.getClass(), beanName, specificInterceptors, new SingletonTargetSource(bean));
 			this.proxyTypes.put(cacheKey, proxy.getClass());
 			return proxy;
@@ -490,14 +490,31 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 			AutoProxyUtils.exposeTargetClass((ConfigurableListableBeanFactory) this.beanFactory, beanName, beanClass);
 		}
 
-		ProxyFactory proxyFactory = new ProxyFactory();
-		proxyFactory.copyFrom(this);
+		ProxyFactory proxyFactory = new ProxyFactory(); /* 创建代理工厂之后 */
+		proxyFactory.copyFrom(this);  /* 然后把当前的 代理的自动创建器（AnnotationAwareAspectJAutoProxyCreator）放入到这个代理工厂 */
 
+		/*
+		 * 这段代码用来判断选择哪种创建代理的方式
+		 * config.isOptimize() 是否对代理类的生成使用优化策略，其作用和 isProxyTargetClass是一样的 默认是false
+		 * **********************************************************************
+		 * config.isProxyTargetClass() 是否使用CGLib的方式创建代理对象  默认是false
+		 * **********************************************************************
+		 * hasNoUserSuppliedProxyInterfaces(config) 目标类是否存在接口，且只有一个接口的时候类型不是SpringProxy类型
+		 *
+		 *
+		 * 判断目标类是否是接口，如果目标类是接口的话，则仍然使用JDK的方式生成代理
+		 * 如果目标是  Proxy 类型，也是用 JDK生成代理
+		 * */
 		if (!proxyFactory.isProxyTargetClass()) {
+			/* 判断使用JDK 还是 CGLib动态代理，但是这里没决定真的用那个！ */
 			if (shouldProxyTargetClass(beanClass, beanName)) {
+				/* XML 中有个属性值是 proxy-target-class="" */
 				proxyFactory.setProxyTargetClass(true);
 			}
 			else {
+				/*
+				* 添加代理接口
+				* */
 				evaluateProxyInterfaces(beanClass, proxyFactory);
 			}
 		}
@@ -511,7 +528,13 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		if (advisorsPreFiltered()) {
 			proxyFactory.setPreFiltered(true);
 		}
-
+		/*
+		* ===================
+		* ===================
+		* 真正创建代理对象
+		* ===================
+		* ===================
+		* */
 		return proxyFactory.getProxy(getProxyClassLoader());
 	}
 

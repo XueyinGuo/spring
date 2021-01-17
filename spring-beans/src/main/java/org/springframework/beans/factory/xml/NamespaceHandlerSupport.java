@@ -90,7 +90,7 @@ public abstract class NamespaceHandlerSupport implements NamespaceHandler {
 		* 	 										AopNamespaceUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary(parserContext, element);
 		*
 		* 	 	【AnnotationAwareAspectJAutoProxyCreator 是 BPP】 -> InstantiationAwareBeanPostProcessor -> SmartInstantiationAwareBeanPostProcessor
-		*
+		*																	用来处理切面的一些注解 @Aspect @Before @After等等
 		*
 		* 3.
 		*    <context:component-scan> 的解析用  ComponentScanBeanDefinitionParser 注入 internal

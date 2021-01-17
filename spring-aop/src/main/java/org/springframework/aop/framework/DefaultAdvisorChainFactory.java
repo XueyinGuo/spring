@@ -53,7 +53,39 @@ public class DefaultAdvisorChainFactory implements AdvisorChainFactory, Serializ
 
 		// This is somewhat tricky... We have to process introductions first,
 		// but we need to preserve order in the ultimate list.
+		/*
+		* 获取到一个 DefaultAdvisorAdapterRegistry 对象，这个对象中包含了三个适配器
+		* MethodBeforeAdviceAdapter
+		* AfterReturningAdviceAdapter
+		* ThrowsAdviceAdapter
+		* */
+		/*
+		 * PS:当前有6个 Advisor， 分别是 ExposeInvocationInterceptor，Around,After 等等，
+		 * 只有 ExposeInvocationInterceptor、AspectAfterAdvice、AspectJAfterThrowingAdvice、AspectAroundAdvice 实现了 MethodInterceptor 接口
+		 * 所以 ExposeInvocationInterceptor、AspectJAfterAdvice、AspectJAfterThrowingAdvice、AspectAroundAdvice 在第一个判断的时候就可以被添加到 interceptors 中待返回
+		 *
+		 * 然而  AspectJMethodBeforeAdvice 、 AspectJAfterReturningAdvice怎么办呢？
+		 *
+		 * 答案就在  DefaultAdvisorAdapterRegistry 对象中 ，这个对象中包含了三个适配器
+		 * 						1.MethodBeforeAdviceAdapter
+		 * 						2.AfterReturningAdviceAdapter
+		 * 						3.ThrowsAdviceAdapter
+		 *
+		 *
+		 * 通过前两个适配器 MethodBeforeAdviceAdapter  AfterReturningAdviceAdapter可以分别处理 AspectJMethodBeforeAdvice 、 AspectJAfterReturningAdvice，
+		 *
+		 * 适配器中有两个方法：supportsAdvice   和   getInterceptor，
+		 * 						|                     |
+		 * 						|                     |
+		 * 				 （判断是否是当）			 （返回一个新对象加入到待返回集合）
+		 * 				（前适配器支持的类） 	     （这个新对象实现了 MethodInterceptor 接口，两个适配器分别返回了）
+		 * 										 （ AfterReturningAdviceInterceptor MethodBeforeAdviceInterceptor）
+		 *
+		 * 所以 第三个适配器是干什么的？
+		 *	TODO ThrowsAdvice 是干啥的？？？？
+		 * */
 		AdvisorAdapterRegistry registry = GlobalAdvisorAdapterRegistry.getInstance();
+		/* 获取到当前的 六个 Advisor */
 		Advisor[] advisors = config.getAdvisors();
 		List<Object> interceptorList = new ArrayList<>(advisors.length);
 		Class<?> actualClass = (targetClass != null ? targetClass : method.getDeclaringClass());
@@ -63,9 +95,11 @@ public class DefaultAdvisorChainFactory implements AdvisorChainFactory, Serializ
 			if (advisor instanceof PointcutAdvisor) {
 				// Add it conditionally.
 				PointcutAdvisor pointcutAdvisor = (PointcutAdvisor) advisor;
+				/* 如果当前的 Advisor 适用于目标类， */
 				if (config.isPreFiltered() || pointcutAdvisor.getPointcut().getClassFilter().matches(actualClass)) {
 					MethodMatcher mm = pointcutAdvisor.getPointcut().getMethodMatcher();
 					boolean match;
+					/* 检测 Advisor 是否适用于 当前方法 */
 					if (mm instanceof IntroductionAwareMethodMatcher) {
 						if (hasIntroductions == null) {
 							hasIntroductions = hasMatchingIntroductions(advisors, actualClass);
@@ -76,6 +110,10 @@ public class DefaultAdvisorChainFactory implements AdvisorChainFactory, Serializ
 						match = mm.matches(method, actualClass);
 					}
 					if (match) {
+						/*
+						* 拦截器链是通过 AdvisorAdapterRegistry 来加入的，这个AdvisorAdapterRegistry堆advice织入有很大作用
+						* 此时的 registry 是上边刚刚创建的 DefaultAdvisorAdapterRegistry，里边有三个适配器
+						* */
 						MethodInterceptor[] interceptors = registry.getInterceptors(advisor);
 						if (mm.isRuntime()) {
 							// Creating a new object instance in the getInterceptors() method
@@ -102,7 +140,11 @@ public class DefaultAdvisorChainFactory implements AdvisorChainFactory, Serializ
 				interceptorList.addAll(Arrays.asList(interceptors));
 			}
 		}
-
+		/*
+		* 经过这个 for 循环之后，把所有的拦截器链加入到了 列表中。
+		* 此时拦截器链中的是 6个Advisor中所包含Advice 的其中4个，
+		* 和另外两个 适配器返回的 对应Advice的 实现了MethodInterceptor接口的实现类
+		* */
 		return interceptorList;
 	}
 

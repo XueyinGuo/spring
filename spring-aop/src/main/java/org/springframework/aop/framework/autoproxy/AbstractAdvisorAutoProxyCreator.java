@@ -74,7 +74,7 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	@Nullable
 	protected Object[] getAdvicesAndAdvisorsForBean(
 			Class<?> beanClass, String beanName, @Nullable TargetSource targetSource) {
-
+		/* 对获取到的Advisor进行判断，看其切面定义是否可以应用到当前bean，从而得到最终可以在当前对象创建动态代理时需要应用的对象 */
 		List<Advisor> advisors = findEligibleAdvisors(beanClass, beanName);
 		if (advisors.isEmpty()) {
 			return DO_NOT_PROXY;
@@ -107,7 +107,7 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 		extendAdvisors(eligibleAdvisors);
 		if (!eligibleAdvisors.isEmpty()) {
 			/*
-			* 拓扑排序对当前的可以用到的切面们进行排序
+			* 拓扑排序对当前的可以用到的切面们进行排序,后面创建调用链的时候很有用！！！！！！！！！！！！！！
 			* */
 			eligibleAdvisors = sortAdvisors(eligibleAdvisors);
 		}

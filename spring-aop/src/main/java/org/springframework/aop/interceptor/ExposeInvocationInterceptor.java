@@ -89,9 +89,19 @@ public final class ExposeInvocationInterceptor implements MethodInterceptor, Pri
 
 	@Override
 	public Object invoke(MethodInvocation mi) throws Throwable {
+		/*
+		* 在调用的时候传递进来的一个 CglibMethodInvocation 对象，
+		* 不是他的父类 ReflectiveMethodInvocation
+		*  */
 		MethodInvocation oldInvocation = invocation.get();
+		/*
+		* 把刚传进来的 CglibMethodInvocation 对象放入到 ThreadLocal 中
+		* */
 		invocation.set(mi);
 		try {
+			/*
+			* 然后调用 mi.proceed  此时的 mi 是 CglibMethodInvocation，开始链条的执行
+			* */
 			return mi.proceed();
 		}
 		finally {

@@ -134,7 +134,7 @@ public abstract class AnnotationConfigUtils {
 	 * @param registry the registry to operate on
 	 */
 	public static void registerAnnotationConfigProcessors(BeanDefinitionRegistry registry) {
-		registerAnnotationConfigProcessors(registry, null);
+		registerAnnotationConfigProcessors(registry, null); /* <context:component-scan>的以internal为开头的BeanDefinition注入到 BeanFactory */
 	}
 
 	/**

@@ -59,11 +59,11 @@ public class AspectJAfterThrowingAdvice extends AbstractAspectJAdvice
 	@Override
 	public Object invoke(MethodInvocation mi) throws Throwable {
 		try {
-			return mi.proceed();
+			return mi.proceed(); /* 此时已经是经过 ExposedInvocationInterceptor 调用过一次 CglibMethodInvocation（也就是当前的 mi）的继续执行方法了，这是第二次调用，然后继续执行链条的逻辑 */
 		}
 		catch (Throwable ex) {
 			if (shouldInvokeOnThrowing(ex)) {
-				invokeAdviceMethod(getJoinPointMatch(), null, ex);
+				invokeAdviceMethod(getJoinPointMatch(), null, ex); /* 处理完了 其他的afterReturning after around before链条逻辑，如果执行过程中有异常爆出，执行 afterThrowing */
 			}
 			throw ex;
 		}

@@ -52,8 +52,8 @@ public class AfterReturningAdviceInterceptor implements MethodInterceptor, After
 
 	@Override
 	public Object invoke(MethodInvocation mi) throws Throwable {
-		Object retVal = mi.proceed();
-		this.advice.afterReturning(retVal, mi.getMethod(), mi.getArguments(), mi.getThis());
+		Object retVal = mi.proceed(); /* 继续回到 CglibMethodInvocation 中执行链条的逻辑 */
+		this.advice.afterReturning(retVal, mi.getMethod(), mi.getArguments(), mi.getThis()); /* 刚刚处理完了 after + around + before，现在处理 afterReturning */
 		return retVal;
 	}
 

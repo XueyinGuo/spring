@@ -65,9 +65,9 @@ public class AspectJAroundAdvice extends AbstractAspectJAdvice implements Method
 			throw new IllegalStateException("MethodInvocation is not a Spring ProxyMethodInvocation: " + mi);
 		}
 		ProxyMethodInvocation pmi = (ProxyMethodInvocation) mi;
-		ProceedingJoinPoint pjp = lazyGetProceedingJoinPoint(pmi);
+		ProceedingJoinPoint pjp = lazyGetProceedingJoinPoint(pmi); /* pmi 仍然是 CglibMethodInvocation对象 */
 		JoinPointMatch jpm = getJoinPointMatch(pmi);
-		return invokeAdviceMethod(pjp, jpm, null, null);
+		return invokeAdviceMethod(pjp, jpm, null, null); /* 这里没继续 mi.proceed()， 而是调用了通知的方法，这才终于准备调用我们自己的 around 方法了 */
 	}
 
 	/**
@@ -78,7 +78,7 @@ public class AspectJAroundAdvice extends AbstractAspectJAdvice implements Method
 	 * @return the ProceedingJoinPoint to make available to advice methods
 	 */
 	protected ProceedingJoinPoint lazyGetProceedingJoinPoint(ProxyMethodInvocation rmi) {
-		return new MethodInvocationProceedingJoinPoint(rmi);
+		return new MethodInvocationProceedingJoinPoint(rmi); /* 用 CglibMethodInvocation 构建一个 这个类对象，新对象包含一些 方法的参数 和 方法签名信息 等变量值 */
 	}
 
 }

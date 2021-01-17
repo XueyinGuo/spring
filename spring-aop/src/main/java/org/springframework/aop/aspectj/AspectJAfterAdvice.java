@@ -44,10 +44,10 @@ public class AspectJAfterAdvice extends AbstractAspectJAdvice
 	@Override
 	public Object invoke(MethodInvocation mi) throws Throwable {
 		try {
-			return mi.proceed();
+			return mi.proceed(); /* 继续回到 CglibMethodInvocation 中执行链条的逻辑 */
 		}
 		finally {
-			invokeAdviceMethod(getJoinPointMatch(), null, null);
+			invokeAdviceMethod(getJoinPointMatch(), null, null); /* 上边已经调用结束了 around + before，现在该处理 after 了 */
 		}
 	}
 

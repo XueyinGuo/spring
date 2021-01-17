@@ -161,7 +161,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 			logger.trace("Creating CGLIB proxy: " + this.advised.getTargetSource());
 		}
 
-		try {
+		try { /* 从 advise 中获取 IOC容器中配置的target对象 */
 			Class<?> rootClass = this.advised.getTargetClass();
 			Assert.state(rootClass != null, "Target class must be available for creating a CGLIB proxy");
 
@@ -173,10 +173,12 @@ class CglibAopProxy implements AopProxy, Serializable {
 					this.advised.addInterface(additionalInterface);
 				}
 			}
-
+			/* 打印出不能代理的方法名，CGLib是使用继承实现的，所以final，static的方法不能被增强 */
 			// Validate the class, writing log messages as necessary.
 			validateClassIfNecessary(proxySuperClass, classLoader);
-
+			/*
+			* CGLib 代理的创建过程，先创建一个 EnhancerKey
+			* */
 			// Configure CGLIB Enhancer...
 			Enhancer enhancer = createEnhancer();
 			if (classLoader != null) {
@@ -186,11 +188,19 @@ class CglibAopProxy implements AopProxy, Serializable {
 					enhancer.setUseCache(false);
 				}
 			}
+			/*
+			* 设置父类，接口，回调方法，代理类的名称
+			* */
 			enhancer.setSuperclass(proxySuperClass);
+			/*
+			* 添加 SpringProxy 和 Advised 两个接口
+			* */
 			enhancer.setInterfaces(AopProxyUtils.completeProxiedInterfaces(this.advised));
 			enhancer.setNamingPolicy(SpringNamingPolicy.INSTANCE);
 			enhancer.setStrategy(new ClassLoaderAwareGeneratorStrategy(classLoader));
-
+			/*
+			* 获取所有的回调类
+			* */
 			Callback[] callbacks = getCallbacks(rootClass);
 			Class<?>[] types = new Class<?>[callbacks.length];
 			for (int x = 0; x < types.length; x++) {
@@ -202,6 +212,9 @@ class CglibAopProxy implements AopProxy, Serializable {
 			enhancer.setCallbackTypes(types);
 
 			// Generate the proxy class and create a proxy instance.
+			/*
+			* 使用 enhancer 对象 生成代理对象，并设置回调
+			* */
 			return createProxyClassAndInstance(enhancer, callbacks);
 		}
 		catch (CodeGenerationException | IllegalArgumentException ex) {
@@ -282,11 +295,17 @@ class CglibAopProxy implements AopProxy, Serializable {
 
 	private Callback[] getCallbacks(Class<?> rootClass) throws Exception {
 		// Parameters used for optimization choices...
+		/*
+		* 某个代理类中，包含 m1 和 m2两个方法，分别调用两个方法的时候，能否执行通知呢？ 当然可以！
+		* 但是 如果是这样的逻辑： m1 中 调用了 m2 方法，那么还会执行消息通知吗？
+		* 这样就不会执行了，如果想要执行的话，就需要设置 expose-proxy 属性为true
+		* */
 		boolean exposeProxy = this.advised.isExposeProxy();
 		boolean isFrozen = this.advised.isFrozen();
 		boolean isStatic = this.advised.getTargetSource().isStatic();
 
 		// Choose an "aop" interceptor (used for AOP calls).
+		/* 将拦截器封装在 DynamicAdvisedInterceptor 中 */
 		Callback aopInterceptor = new DynamicAdvisedInterceptor(this.advised);
 
 		// Choose a "straight to target" interceptor. (used for calls that are
@@ -307,8 +326,9 @@ class CglibAopProxy implements AopProxy, Serializable {
 		// unadvised calls to static targets that cannot return this).
 		Callback targetDispatcher = (isStatic ?
 				new StaticDispatcher(this.advised.getTargetSource().getTarget()) : new SerializableNoOp());
-
+		/* 把刚刚创建的所有拦截器放在 callBack 数组中  */
 		Callback[] mainCallbacks = new Callback[] {
+				/* aopInterceptor 是 DynamicAdvisedInterceptor 类型 */
 				aopInterceptor,  // for normal advice
 				targetInterceptor,  // invoke target without considering advice, if optimized
 				new SerializableNoOp(),  // no override for methods mapped to this
@@ -661,6 +681,10 @@ class CglibAopProxy implements AopProxy, Serializable {
 		@Override
 		@Nullable
 		public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
+			/*
+			* 当生成代理之后就可以进行方法调用了，但是此时共有6个 Advisor，他们在执行的时候按照某个顺序来执行，而且由一个通知会跳转到另外一个通知，
+			* 所以此时，我们需要构建一个拦截器链（责任链模式），只有创建好当前的链式结构，才能顺利往下进行
+			* */
 			Object oldProxy = null;
 			boolean setProxyContext = false;
 			Object target = null;
@@ -673,7 +697,27 @@ class CglibAopProxy implements AopProxy, Serializable {
 				}
 				// Get as late as possible to minimize the time we "own" the target, in case it comes from a pool...
 				target = targetSource.getTarget();
-				Class<?> targetClass = (target != null ? target.getClass() : null);
+				Class<?> targetClass = (target != null ? target.getClass() : null);  /* 解析到代理对象的类型 */
+				/*
+				* 获取拦截器执行链
+				*
+				* ===================================================================================================================
+				* ===================================================================================================================
+				* 当生成代理之后就可以进行方法调用了，但是此时共有6个 Advisor，他们在执行的时候按照某个顺序来执行，而且由一个通知会跳转到另外一个通知，
+				* 所以此时，我们需要构建一个拦截器链（责任链模式），只有创建好当前的链式结构，才能顺利往下进行！！！！
+				* 所以 你还记得给 Advisor 的排序吗？？？！！！！
+				* 经过排序之后的 Advisor的顺序是
+				* 		1. exposeInvocationInterceptor  ---> 根据索引的下标获取对应的通知来执行，相当于 【工作协调者】
+				* 		2. afterThrowing                ---> 等方法抛出异常后续执行的逻辑
+				* 		3. afterReturning				---> 方法完成执行之后后续执行的逻辑                 -> AspectJAfterReturningAdvice 没有 invoke 方法
+				* 		4. after						---> 后续执行的逻辑
+				* 		5. around						---> 第一个执行，在执行过程中调用 before执行
+				* 		6. before						---> around 执行期间执行，执行完之后继续执行 around
+				* ===================================================================================================================
+				* ===================================================================================================================
+				*
+				* this.advised 就是 ProxyFactory， method 是你要调用的那个方法
+				* */
 				List<Object> chain = this.advised.getInterceptorsAndDynamicInterceptionAdvice(method, targetClass);
 				Object retVal;
 				// Check whether we only have one InvokerInterceptor: that is,
@@ -688,6 +732,13 @@ class CglibAopProxy implements AopProxy, Serializable {
 				}
 				else {
 					// We need to create a method invocation...
+					/*
+					* CglibMethodInvocation 是 ReflectiveMethodInvocation 的子类，然而 ReflectiveMethodInvocation 是把这个执行链条串起来的类
+					* 他主要就是通过 chain 这个list 中的下标获得相应的 MethodInterceptor，然后执行
+					* 在 new这个子类对象的时候，把 chain 赋值给父类的 一个变量 interceptorsAndDynamicMethodMatchers，
+					*
+					* 然后开始链条逻辑的执行
+					* */
 					retVal = new CglibMethodInvocation(proxy, target, method, args, targetClass, chain, methodProxy).proceed();
 				}
 				retVal = processReturnType(proxy, target, method, retVal);
@@ -746,7 +797,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 		@Nullable
 		public Object proceed() throws Throwable {
 			try {
-				return super.proceed();
+				return super.proceed(); /* 调用父类，继续进行执行，好多个都会重新回到这里，然后继续回到他的父类中让那个值继续+1 */
 			}
 			catch (RuntimeException ex) {
 				throw ex;
@@ -768,7 +819,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 		@Override
 		protected Object invokeJoinpoint() throws Throwable {
 			if (this.methodProxy != null) {
-				return this.methodProxy.invoke(this.target, this.arguments);
+				return this.methodProxy.invoke(this.target, this.arguments); /* 执行连接点方法的时候了！！！ */
 			}
 			else {
 				return super.invokeJoinpoint();

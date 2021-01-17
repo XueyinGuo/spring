@@ -347,7 +347,7 @@ abstract public class AbstractClassGenerator<T> implements ClassGenerator {
 				*  */
 				return firstInstance((Class) obj);
 			}
-			return nextInstance(obj);
+			return nextInstance(obj); /* data.get()只是获取到一个 Object对象，不是Class，在这个方法中强转才能获得一个 class */
 		}
 		catch (RuntimeException | Error ex) {
 			throw ex;

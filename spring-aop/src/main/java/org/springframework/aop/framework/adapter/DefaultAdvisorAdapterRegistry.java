@@ -46,7 +46,7 @@ public class DefaultAdvisorAdapterRegistry implements AdvisorAdapterRegistry, Se
 	/**
 	 * Create a new DefaultAdvisorAdapterRegistry, registering well-known adapters.
 	 */
-	public DefaultAdvisorAdapterRegistry() {
+	public DefaultAdvisorAdapterRegistry() { /* 为什么只添加这三个 */
 		registerAdvisorAdapter(new MethodBeforeAdviceAdapter());
 		registerAdvisorAdapter(new AfterReturningAdviceAdapter());
 		registerAdvisorAdapter(new ThrowsAdviceAdapter());
@@ -79,6 +79,35 @@ public class DefaultAdvisorAdapterRegistry implements AdvisorAdapterRegistry, Se
 	public MethodInterceptor[] getInterceptors(Advisor advisor) throws UnknownAdviceTypeException {
 		List<MethodInterceptor> interceptors = new ArrayList<>(3);
 		Advice advice = advisor.getAdvice();
+		/*
+		* 获取到当前 Advisor中的 Advice，看看这个Advice是什么类型
+		*
+		* 如果 Advice 是 MethodInterceptor 类型  被添加到 interceptors 中待返回
+		*
+		* PS:当前有6个 Advisor， 分别是 ExposeInvocationInterceptor，Around,After 等等，
+		* 只有 ExposeInvocationInterceptor、AspectAfterAdvice、AspectJAfterThrowingAdvice、AspectAroundAdvice 实现了 MethodInterceptor 接口
+		* 所以 ExposeInvocationInterceptor、AspectJAfterAdvice、AspectJAfterThrowingAdvice、AspectAroundAdvice 在第一个判断的时候就可以被添加到 interceptors 中待返回
+		*
+		* 然而  AspectJMethodBeforeAdvice 、 AspectJAfterReturningAdvice怎么办呢？
+		*
+		* 答案就在  DefaultAdvisorAdapterRegistry 对象中 ，这个对象中包含了三个适配器
+		* 						1.MethodBeforeAdviceAdapter
+		* 						2.AfterReturningAdviceAdapter
+		* 						3.ThrowsAdviceAdapter
+		*
+		*
+		* 通过前两个适配器 MethodBeforeAdviceAdapter  AfterReturningAdviceAdapter可以分别处理 AspectJMethodBeforeAdvice 、 AspectJAfterReturningAdvice，
+		*
+		* 适配器中有两个方法：supportsAdvice   和   getInterceptor，
+		* 						|                     |
+		* 						|                     |
+		* 				 （判断是否是当）			 （返回一个新对象加入到待返回集合）
+		* 				（前适配器支持的类） 	     （这个新对象实现了 MethodInterceptor 接口，两个适配器分别返回了）
+		* 										 （ AfterReturningAdviceInterceptor MethodBeforeAdviceInterceptor）
+		*
+		* 所以 第三个适配器是干什么的？
+		*
+		* */
 		if (advice instanceof MethodInterceptor) {
 			interceptors.add((MethodInterceptor) advice);
 		}

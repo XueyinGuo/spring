@@ -109,8 +109,31 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 * 		4. logUtil                  -> 切面
 * 		5. myCalculator             -> 包含的连接点方法的类，执行这些满足 myPoint(表达式规则) 的方法时 去 logUtil（切面）找到合适的 Advisor#0--#4 方法执行
 * */
-public class AOPTest {
-	public static void main(String[] args) {
+public class TestXMLAOP {
+	public static void main(String[] args) throws NoSuchMethodException {
 		ClassPathXmlApplicationContext classPathXmlApplicationContext = new ClassPathXmlApplicationContext("aop.xml");
+		MyCalculator bean = classPathXmlApplicationContext.getBean(MyCalculator.class);
+		/*
+		* 跳入 DynamicAdvisedInterceptor 中进行执行
+		*
+		* ===================================================================================================================
+		* ===================================================================================================================
+		* 当生成代理之后就可以进行方法调用了，但是此时共有6个 Advisor，他们在执行的时候按照某个顺序来执行，而且由一个通知会跳转到另外一个通知，
+		* 所以此时，我们需要构建一个拦截器链（责任链模式），只有创建好当前的链式结构，才能顺利往下进行！！！！
+		*
+		* 所以 你还记得给 Advisor 的排序吗？？？！！！！
+		* 经过排序之后的 Advisor的顺序是
+		* 		1. exposeInvocationInterceptor  ---> 根据索引的下标获取对应的通知来执行，相当于 【工作协调者】
+		* 		2. afterThrowing                ---> 等方法抛出异常后续执行的逻辑
+		* 		3. afterReturning				---> 方法完成执行之后后续执行的逻辑                 -> AspectJAfterReturningAdvice 没有 invoke 方法
+		* 		4. after						---> 后续执行的逻辑
+		* 		5. around						---> 第一个执行，在执行过程中调用 before执行
+		* 		6. before						---> around 执行期间执行，执行完之后继续执行 around
+		* ===================================================================================================================
+		* ===================================================================================================================
+		*
+		* */
+		Integer add = bean.add(1, 1);
+		System.out.println(add);
 	}
 }
