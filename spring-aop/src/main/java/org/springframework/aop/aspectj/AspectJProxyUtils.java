@@ -49,6 +49,20 @@ public abstract class AspectJProxyUtils {
 			for (Advisor advisor : advisors) {
 				// Be careful not to get the Advice without a guard, as this might eagerly
 				// instantiate a non-singleton AspectJ aspect...
+				/*
+				* 事务对象的创建，为什么发现了事务就不往创建一个Bean的代理对象适用的Advisor中添加 ExposeInvocationInterceptor 这个
+				* 链条开始者了呢？======================================================
+				* */
+				/*
+				 * 开始创建 事务对象。
+				 * 因为事务的BeanDefinition类型是 TransactionInterceptor 实现了 MethodInterceptor --> Interceptor -> Advice
+				 * 所以我们自己扩展的时候，完全只用实现 MethodInterceptor 接口就好了。
+				 *
+				 * 如果具体的一个实现子类实现了 MethodInterceptor，那么直接可以把当前的 MethodInterceptor当成 Advice
+				 *
+				 * TransactionInterceptor   ------>   NameMatchTransactionAttributeSource
+				 * 但是记得事务对象的嵌套关系是这样的，还得嵌套创建
+				 * */
 				if (isAspectJAdvice(advisor)) {
 					foundAspectJAdvice = true;
 					break;
@@ -71,6 +85,16 @@ public abstract class AspectJProxyUtils {
 	 */
 	private static boolean isAspectJAdvice(Advisor advisor) {
 		return (advisor instanceof InstantiationModelAwarePointcutAdvisor ||
+				/*
+				 * 开始创建 事务对象。
+				 * 因为事务的BeanDefinition类型是 TransactionInterceptor 实现了 MethodInterceptor --> Interceptor -> Advice
+				 * 所以我们自己扩展的时候，完全只用实现 MethodInterceptor 接口就好了。
+				 *
+				 * 如果具体的一个实现子类实现了 MethodInterceptor，那么直接可以把当前的 MethodInterceptor当成 Advice
+				 *
+				 * TransactionInterceptor   ------>   NameMatchTransactionAttributeSource
+				 * 但是记得事务对象的嵌套关系是这样的，还得嵌套创建
+				 * */
 				advisor.getAdvice() instanceof AbstractAspectJAdvice ||
 				(advisor instanceof PointcutAdvisor &&
 						((PointcutAdvisor) advisor).getPointcut() instanceof AspectJExpressionPointcut));

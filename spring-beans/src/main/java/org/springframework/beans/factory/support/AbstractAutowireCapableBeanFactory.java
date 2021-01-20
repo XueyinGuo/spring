@@ -2202,6 +2202,21 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 					}
 					originalValue = new DependencyDescriptor(new MethodParameter(writeMethod, 0), true);
 				}
+				/*
+				* 解析各种类型，
+				* RuntimeBeanReference				---->
+				* RuntimeBeanNameReference		    ---->
+				* BeanDefinitionHolder				---->
+				* BeanDefinition					---->
+				* DependencyDescriptor				---->
+				* ManagedArray						---->
+				* ManagedList						---->
+				* ManagedSet						---->
+				* ManagedMap						---->
+				* ManagedProperties					---->
+				* TypedStringValue					---->
+				* NullBean							---->
+				* */
 				Object resolvedValue = valueResolver.resolveValueIfNecessary(pv, originalValue);
 				Object convertedValue = resolvedValue;
 				boolean convertible = bw.isWritableProperty(propertyName) &&

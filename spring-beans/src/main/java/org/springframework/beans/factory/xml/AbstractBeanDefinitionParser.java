@@ -63,6 +63,10 @@ public abstract class AbstractBeanDefinitionParser implements BeanDefinitionPars
 		/*
 		* 解析完成后获取到 definition
 		* 在 parseInternal(element, parserContext); 中 我们可以重写 doParse(),实现自己的扩展逻辑
+		*
+		* 此时 这个 BeanDefinition 中的结构就是
+		*
+		* TransactionInterceptor   ------>   NameMatchTransactionAttributeSource
 		* */
 		AbstractBeanDefinition definition = parseInternal(element, parserContext);
 		if (definition != null && !parserContext.isNested()) {

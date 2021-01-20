@@ -105,6 +105,12 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
 		/*
 		* 注册自动代理模式创建器， AspectJAwareAdvisorAutoProxyCreator
 		* 用注解的时候怎么办呢？  AnnotationAwareAspectJAutoProxyCreator
+		*
+		* ===================================================
+		* ===================================================
+		* 注册 internal
+		* ===================================================
+		* ===================================================
 		* */
 		configureAutoProxyCreator(parserContext, element);
 		/*
@@ -117,13 +123,13 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
 			* <aop:config>下边只有这三个子标签
 			* */
 			if (POINTCUT.equals(localName)) {
-				parsePointcut(elt, parserContext);
+				parsePointcut(elt, parserContext); /* AspectJExpressionPointcut 的 BeanDefinition */
 			}
 			else if (ADVISOR.equals(localName)) {
-				parseAdvisor(elt, parserContext);
+				parseAdvisor(elt, parserContext);  /* DefaultBeanFactoryPointcutAdvisor 的 BeanDefinition */
 			}
 			else if (ASPECT.equals(localName)) {
-				parseAspect(elt, parserContext);
+				parseAspect(elt, parserContext); /* AspectComponentDefinition 里面的嵌套关系很复杂 */
 			}
 		}
 
@@ -147,26 +153,37 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
 	 * with the supplied {@link BeanDefinitionRegistry}.
 	 */
 	private void parseAdvisor(Element advisorElement, ParserContext parserContext) {
-		AbstractBeanDefinition advisorDef = createAdvisorBeanDefinition(advisorElement, parserContext);
+		AbstractBeanDefinition advisorDef = createAdvisorBeanDefinition(advisorElement, parserContext); /* 创建 DefaultBeanFactoryPointcutAdvisor 的 BeanDefinition */
 		String id = advisorElement.getAttribute(ID);
 
 		try {
 			this.parseState.push(new AdvisorEntry(id));
 			String advisorBeanName = id;
+			/* 我们自己制定了名字的话就用制定的名字 */
 			if (StringUtils.hasText(advisorBeanName)) {
 				parserContext.getRegistry().registerBeanDefinition(advisorBeanName, advisorDef);
 			}
 			else {
+				/* 否则按照命名规则生成一个名字 */
 				advisorBeanName = parserContext.getReaderContext().registerWithGeneratedName(advisorDef);
 			}
 
 			Object pointcut = parsePointcutProperty(advisorElement, parserContext);
+
 			if (pointcut instanceof BeanDefinition) {
+				/*
+				 * 如果解析到的  pointcut 是一个已经创建好的 BeanDefinition
+				 * 往刚刚创建的这个 BeanDefinition 中添加这个解析到的beanDefinition引用
+				 * */
 				advisorDef.getPropertyValues().add(POINTCUT, pointcut);
 				parserContext.registerComponent(
 						new AdvisorComponentDefinition(advisorBeanName, advisorDef, (BeanDefinition) pointcut));
 			}
 			else if (pointcut instanceof String) {
+				/*
+				* 如果解析到的 是一个字符串，那么说明这个BeanDefinition还没有创建，
+				* 先往刚刚创建的这个BeanDefinition中添加一个 RuntimeBeanReference的引用
+				* */
 				advisorDef.getPropertyValues().add(POINTCUT, new RuntimeBeanReference((String) pointcut));
 				parserContext.registerComponent(
 						new AdvisorComponentDefinition(advisorBeanName, advisorDef));
@@ -266,7 +283,7 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
 			/*
 			* 解析 point-cut ，解析出表达式的结果值
 			* pointcutsBean 的 BeanDefinition的 beanClass = AspectJExpressionPointcut
-			* 把point-cut的BeanDefinition注册到BeanFactory
+			* 把point-cut的 BeanDefinition 注册到 BeanFactory
 			* */
 			List<Element> pointcuts = DomUtils.getChildElementsByTagName(aspectElement, POINTCUT);
 			for (Element pointcutElement : pointcuts) {
@@ -542,7 +559,7 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
 
 			String pointcutBeanName = id;
 			if (StringUtils.hasText(pointcutBeanName)) {
-				/* 把point-cut的BeanDefinition注册到BeanFactory */
+				/* 把point-cut 的 BeanDefinition 注册到 BeanFactory */
 				parserContext.getRegistry().registerBeanDefinition(pointcutBeanName, pointcutDefinition);
 			}
 			else {
@@ -608,8 +625,8 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
 	 * the supplied pointcut expression.
 	 */
 	protected AbstractBeanDefinition createPointcutDefinition(String expression) {
-		RootBeanDefinition beanDefinition = new RootBeanDefinition(AspectJExpressionPointcut.class);
-		beanDefinition.setScope(BeanDefinition.SCOPE_PROTOTYPE);
+		RootBeanDefinition beanDefinition = new RootBeanDefinition(AspectJExpressionPointcut.class); /* 创建表达式BeanDefinition对象 */
+		beanDefinition.setScope(BeanDefinition.SCOPE_PROTOTYPE); /* 设置原型作用域 */
 		beanDefinition.setSynthetic(true);
 		beanDefinition.getPropertyValues().add(EXPRESSION, expression);
 		return beanDefinition;

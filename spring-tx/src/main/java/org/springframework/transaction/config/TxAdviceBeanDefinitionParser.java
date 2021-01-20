@@ -68,23 +68,28 @@ class TxAdviceBeanDefinitionParser extends AbstractSingleBeanDefinitionParser {
 
 	@Override
 	protected Class<?> getBeanClass(Element element) {
-		return TransactionInterceptor.class;
+		return TransactionInterceptor.class; /* 返回一个实现了 MethodInterceptor的接口 类型 */
 	}
 
 	@Override
 	protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {
 		builder.addPropertyReference("transactionManager", TxNamespaceHandler.getTransactionManagerName(element));
-
+		/*
+		* 获取 tx:advice 的子元素
+		* */
 		List<Element> txAttributes = DomUtils.getChildElementsByTagName(element, ATTRIBUTES_ELEMENT);
 		if (txAttributes.size() > 1) {
 			parserContext.getReaderContext().error(
 					"Element <attributes> is allowed at most once inside element <advice>", element);
 		}
 		else if (txAttributes.size() == 1) {
-			// Using attributes source.
+			/*
+			* 创建一个新的 BeanDefinition中的一个 map 存放的都是 <tx:advice> 中 <tx:attributes> 中的所有的
+			* tx:method 及其所对应的所有属性
+			* */
 			Element attributeSourceElement = txAttributes.get(0);
 			RootBeanDefinition attributeSourceDefinition = parseAttributeSource(attributeSourceElement, parserContext);
-			builder.addPropertyValue("transactionAttributeSource", attributeSourceDefinition);
+			builder.addPropertyValue("transactionAttributeSource", attributeSourceDefinition); /* 把 TX 类型的beanDefinition中加入刚刚解析出来的所有的 Method */
 		}
 		else {
 			// Assume annotations source.
@@ -94,6 +99,9 @@ class TxAdviceBeanDefinitionParser extends AbstractSingleBeanDefinitionParser {
 	}
 
 	private RootBeanDefinition parseAttributeSource(Element attrEle, ParserContext parserContext) {
+		/*
+		* 获取 <tx:attributes>中所有的 <tx:method
+		* */
 		List<Element> methods = DomUtils.getChildElementsByTagName(attrEle, METHOD_ELEMENT);
 		ManagedMap<TypedStringValue, RuleBasedTransactionAttribute> transactionAttributeMap =
 				new ManagedMap<>(methods.size());
@@ -105,10 +113,10 @@ class TxAdviceBeanDefinitionParser extends AbstractSingleBeanDefinitionParser {
 			nameHolder.setSource(parserContext.extractSource(methodEle));
 
 			RuleBasedTransactionAttribute attribute = new RuleBasedTransactionAttribute();
-			String propagation = methodEle.getAttribute(PROPAGATION_ATTRIBUTE);
-			String isolation = methodEle.getAttribute(ISOLATION_ATTRIBUTE);
-			String timeout = methodEle.getAttribute(TIMEOUT_ATTRIBUTE);
-			String readOnly = methodEle.getAttribute(READ_ONLY_ATTRIBUTE);
+			String propagation = methodEle.getAttribute(PROPAGATION_ATTRIBUTE);              /* 传播特性 */
+			String isolation = methodEle.getAttribute(ISOLATION_ATTRIBUTE);                 /* 隔离级别 */
+			String timeout = methodEle.getAttribute(TIMEOUT_ATTRIBUTE);                    /* 超时时间 */
+			String readOnly = methodEle.getAttribute(READ_ONLY_ATTRIBUTE);                /* 是否只读 */
 			if (StringUtils.hasText(propagation)) {
 				attribute.setPropagationBehaviorName(RuleBasedTransactionAttribute.PREFIX_PROPAGATION + propagation);
 			}
@@ -128,7 +136,7 @@ class TxAdviceBeanDefinitionParser extends AbstractSingleBeanDefinitionParser {
 			}
 
 			List<RollbackRuleAttribute> rollbackRules = new ArrayList<>(1);
-			if (methodEle.hasAttribute(ROLLBACK_FOR_ATTRIBUTE)) {
+			if (methodEle.hasAttribute(ROLLBACK_FOR_ATTRIBUTE)) {                                   /* 回滚 */
 				String rollbackForValue = methodEle.getAttribute(ROLLBACK_FOR_ATTRIBUTE);
 				addRollbackRuleAttributesTo(rollbackRules, rollbackForValue);
 			}
@@ -140,11 +148,11 @@ class TxAdviceBeanDefinitionParser extends AbstractSingleBeanDefinitionParser {
 
 			transactionAttributeMap.put(nameHolder, attribute);
 		}
-
+		/* 创建一个新的 NameMatchTransactionAttributeSource的 BeanDefinition */
 		RootBeanDefinition attributeSourceDefinition = new RootBeanDefinition(NameMatchTransactionAttributeSource.class);
 		attributeSourceDefinition.setSource(parserContext.extractSource(attrEle));
 		attributeSourceDefinition.getPropertyValues().add("nameMap", transactionAttributeMap);
-		return attributeSourceDefinition;
+		return attributeSourceDefinition; /* 这个 BeanDefinition 存放的都是 tx:advice 中 tx:attributes 中的所有的 tx:method */
 	}
 
 	private void addRollbackRuleAttributesTo(List<RollbackRuleAttribute> rollbackRules, String rollbackForValue) {

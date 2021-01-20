@@ -75,6 +75,10 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	protected Object[] getAdvicesAndAdvisorsForBean(
 			Class<?> beanClass, String beanName, @Nullable TargetSource targetSource) {
 		/* 对获取到的Advisor进行判断，看其切面定义是否可以应用到当前bean，从而得到最终可以在当前对象创建动态代理时需要应用的对象 */
+		/*
+		* 1. 五个 before around等 外加 创建事务对象
+		* 或者 2. 五个 before around等 外加一个 ExposeInvocationInterceptor
+		* */
 		List<Advisor> advisors = findEligibleAdvisors(beanClass, beanName);
 		if (advisors.isEmpty()) {
 			return DO_NOT_PROXY;
@@ -103,6 +107,9 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 		* 往 可用的 advisor 列表中新加入一个 ExposeInvocationInterceptor，并且放到第一个位置
 		* ExposeInvocationInterceptor 有什么用呢？
 		* 在后续任何调用链环节，只需要用当前的 MethodInvocation 就用 ExposeInvocationInterceptor.currentInvocation()静态方法获得。
+		*
+		* 给调用链添加至关重要的协调者！！！！
+		* 创建事务对象，或者添加 ExposeInvocationInterceptor
 		* */
 		extendAdvisors(eligibleAdvisors);
 		if (!eligibleAdvisors.isEmpty()) {

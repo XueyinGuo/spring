@@ -113,6 +113,16 @@ public abstract class AbstractBeanFactoryPointcutAdvisor extends AbstractPointcu
 
 		if (this.beanFactory.isSingleton(this.adviceBeanName)) {
 			// Rely on singleton semantics provided by the factory.
+			/*
+			* 开始创建 事务对象。
+			* 因为事务的BeanDefinition类型是 TransactionInterceptor 实现了 MethodInterceptor --> Interceptor -> Advice
+			* 所以我们自己扩展的时候，完全只用实现 MethodInterceptor 接口就好了。
+			*
+			* 如果具体的一个实现子类实现了 MethodInterceptor，那么直接可以把当前的 MethodInterceptor当成 Advice
+			*
+			* TransactionInterceptor   ------>   NameMatchTransactionAttributeSource
+			* 但是记得事务对象的嵌套关系是这样的，还得嵌套创建
+			* */
 			advice = this.beanFactory.getBean(this.adviceBeanName, Advice.class);
 			this.advice = advice;
 			return advice;

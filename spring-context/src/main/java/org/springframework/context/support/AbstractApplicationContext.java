@@ -713,6 +713,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				 * 5.处理 @ImportResource 引入的配置文件
 				 * 6.处理加了 @Bean 的方法
 				 * */
+				/*
+				* 如果有数据库配置 文件， ${jdbc.userName}这种属性值，在一个 PropertySourcesPlaceholderCOnfigurer 中进行解析替换工作
+				* */
 				invokeBeanFactoryPostProcessors(beanFactory);
 
 				// Register bean processors that intercept bean creation.

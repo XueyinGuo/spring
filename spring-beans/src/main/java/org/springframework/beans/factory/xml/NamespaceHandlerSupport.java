@@ -103,6 +103,14 @@ public abstract class NamespaceHandlerSupport implements NamespaceHandler {
 		*
 		*    		3.3  【CommonAnnotationBeanPostProcessor 是 BPP】 -> InstantiationAwareBeanPostProcessor :  @Resource  @PostConstruct  @PreDestroy
 		*
+		*
+		*
+		* 4.
+		* 	<tx:advice> 的解析 用的 TxAdviceBeanDefinitionParser
+		* 			TransactionInterceptor   ------>   NameMatchTransactionAttributeSource
+		*
+		*
+		*
 		* BFPP + BDRPP 在 invokeBeanFactoryPostProcessor()时getBean初始化完毕
 		* BPP 在 registerBeanPostProcessor()时的getBean初始化完毕
 		* 在最后创建对象的时候就只等着用他们就好了

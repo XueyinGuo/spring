@@ -525,7 +525,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			if (!isAlias(beanName)) {
 				try {
 					/*
-					*
+					* 找到所有 BeanName 符合 type 类型的 BeanDefinition 加入 result集合 并返回
 					*  */
 					RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
 					// Only check bean definition if it is complete.

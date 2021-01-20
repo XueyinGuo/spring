@@ -65,7 +65,7 @@ public abstract class AbstractSingleBeanDefinitionParser extends AbstractBeanDef
 		if (parentName != null) {
 			builder.getRawBeanDefinition().setParentName(parentName);
 		}
-		Class<?> beanClass = getBeanClass(element);
+		Class<?> beanClass = getBeanClass(element); /* 给 当前的BeanDefinition 设置为 TransactionInterceptor 类型 */
 		if (beanClass != null) {
 			builder.getRawBeanDefinition().setBeanClass(beanClass);
 		}
@@ -85,7 +85,7 @@ public abstract class AbstractSingleBeanDefinitionParser extends AbstractBeanDef
 			// Default-lazy-init applies to custom bean definitions as well.
 			builder.setLazyInit(true);
 		}
-		/*调用子类重写的方法 进行解析 */
+		/*调用子类重写的方法 进行解析， 此时 builder已经是一个 TransactionInterceptor类型的 beanDefinition 了 */
 		doParse(element, parserContext, builder);
 		return builder.getBeanDefinition();
 	}
