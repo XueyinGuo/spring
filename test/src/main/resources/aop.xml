@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/aop https://www.springframework.org/schema/aop/spring-aop.xsd http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd">
+
+	<bean id="logUtil" class="com.szu.spring.aopTest.LogUtil"></bean>
+
+	<bean id="myCalculator" class="com.szu.spring.aopTest.MyCalculator"></bean>
+
+	<aop:config>
+		<aop:aspect ref="logUtil"> 																								 <!--指定切入逻辑类 aspect-->
+			<aop:pointcut id="myPoint" expression="execution(Integer com.szu.spring.aopTest.MyCalculator.*(Integer,Integer))"/> <!--所有的切点们  pointcut-->
+			<aop:around method="around" pointcut-ref="myPoint"></aop:around> 													 <!--切点切入后执行的方法（通知 advice）-->
+			<aop:before method="start" pointcut-ref="myPoint"></aop:before>														 <!--切点切入后执行的方法-->
+			<aop:after method="logFinally" pointcut-ref="myPoint"></aop:after>
+			<aop:after-returning method="stop" pointcut-ref="myPoint" returning="result"></aop:after-returning>
+			<aop:after-throwing method="logException" pointcut-ref="myPoint" throwing="e"></aop:after-throwing>
+<!--			<aop:pointcut id="" expression="" />-->
+		</aop:aspect>
+
+	</aop:config>
+	<aop:aspectj-autoproxy></aop:aspectj-autoproxy>
+<!--	<context:component-scan base-package="com.szu.spring"></context:component-scan>-->
+
+</beans>
