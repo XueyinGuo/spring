@@ -137,6 +137,10 @@ public abstract class AbstractTransactionStatus implements TransactionStatus {
 	 * if the underlying transaction does not support savepoints
 	 */
 	public void createAndHoldSavepoint() throws TransactionException {
+		/*
+		 * 创建保存点，最后调用到数据源中，
+		 * 数据源继续调用下层的mysql驱动代码创建保存点
+		 * */
 		setSavepoint(getSavepointManager().createSavepoint());
 	}
 
@@ -150,7 +154,11 @@ public abstract class AbstractTransactionStatus implements TransactionStatus {
 			throw new TransactionUsageException(
 					"Cannot roll back to savepoint - no savepoint associated with current transaction");
 		}
+		/*
+		 * 回滚到保存点，并且重置回滚标记，之后就不需要回滚了。
+		 * */
 		getSavepointManager().rollbackToSavepoint(savepoint);
+		/* 删除这个保存点 */
 		getSavepointManager().releaseSavepoint(savepoint);
 		setSavepoint(null);
 	}

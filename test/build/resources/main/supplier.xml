@@ -3,7 +3,7 @@
 	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
-	<bean id="user" class="com.sztu.spring.supplier.User"></bean>
+	<bean id="user" class="com.szu.spring.supplier.User"></bean>
 
-	<bean class="com.sztu.spring.supplier.SupplierBeanFactoryPostProcessor"></bean>
+	<bean class="com.szu.spring.supplier.SupplierBeanFactoryPostProcessor"></bean>
 </beans>

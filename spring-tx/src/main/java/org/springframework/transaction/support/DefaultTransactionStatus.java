@@ -83,7 +83,13 @@ public class DefaultTransactionStatus extends AbstractTransactionStatus {
 	public DefaultTransactionStatus(
 			@Nullable Object transaction, boolean newTransaction, boolean newSynchronization,
 			boolean readOnly, boolean debug, @Nullable Object suspendedResources) {
-
+		/*
+		* transaction 第一次进来的时候还是空的，
+		* 是否是新事务
+		* 是否需要新的同步
+		* 只读（）
+		* 挂起的资源们
+		* */
 		this.transaction = transaction;
 		this.newTransaction = newTransaction;
 		this.newSynchronization = newSynchronization;

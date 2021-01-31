@@ -209,7 +209,7 @@ class BeanDefinitionValueResolver {
 		else if (value instanceof TypedStringValue) {  /* Property中的值是普通的字符串的时候 */
 			// Convert value to target type here.
 			/*
-			*   <bean id="star" class="com.sztu.spring.myRegisterEditor.Star">
+			*   <bean id="star" class="com.szu.spring.myRegisterEditor.Star">
 					<property name="name" value="The Falling Star!"></property>
 					<property name="address" value="重庆市_重庆市_hd区_皓阳园_三号楼"></property>
 				</bean>

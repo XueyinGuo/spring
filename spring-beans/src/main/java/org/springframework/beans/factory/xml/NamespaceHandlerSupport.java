@@ -76,7 +76,7 @@ public abstract class NamespaceHandlerSupport implements NamespaceHandler {
 		* 1.
 		*	 <aop:config>  的解析用  ConfigBeanDefinitionParser
 		*	   	                		           	   { -----> MethodLocatingFactoryBean
-		*				Advisor --->   adviceDef --->  { -----> expression="execution(Integer com.sztu.spring.aopTest.MyCalculator.*(Integer,Integer))"
+		*				Advisor --->   adviceDef --->  { -----> expression="execution(Integer com.szu.spring.aopTest.MyCalculator.*(Integer,Integer))"
 		*							                   { -----> SimpleBeanFactoryAwareAspectInstanceFactory
 		*
 		* 	1.1 每个after before after-returning after-throwing around 标签都解析成一个 adviceDef 然后外边再套一层  Advisor

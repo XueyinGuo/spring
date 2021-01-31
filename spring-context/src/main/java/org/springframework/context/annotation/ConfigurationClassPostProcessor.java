@@ -270,7 +270,19 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			// Simply call processConfigurationClasses lazily at this point then.
 			processConfigBeanDefinitions((BeanDefinitionRegistry) beanFactory);
 		}
-
+		/*
+		* 在此方法中创建所有的 @Configuration 注解标注的配置类，并给这些创建！！！代理对象！！
+		* */
+		/*
+		 * 在之前扫描注解的时候，如果那个类被@Configuration修饰，则把他的对应的BeanDefinition的
+		 * configurationClass 属性设置为了 “full”
+		 * 不是配置类的设置为了 “lite”
+		 * 当遍历到的BeanDefinition是full的时候，也就是说这是个 配置类，
+		 * 然而配置类中的所有属性都应该是单例的，
+		 *
+		 * 所以当出现这种情况的时候： com.szu.spring.txTest.annotation.MyConfiguration 中这样的情况的时候
+		 * 创建代理类来保证配置类中的每个 Bean 都是单例的
+		 * */
 		enhanceConfigurationClasses(beanFactory);
 		beanFactory.addBeanPostProcessor(new ImportAwareBeanPostProcessor(beanFactory));
 	}
@@ -394,6 +406,10 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 						registry, this.sourceExtractor, this.resourceLoader, this.environment,
 						this.importBeanNameGenerator, parser.getImportRegistry());
 			}
+			/*
+			* 将填充好的 ConfigurationClass 实例转化为 BeanDefinition 注册进BeanDefinitionMap
+			* 如果 @Configuration 的类中导入了其他的东西
+			* */
 			this.reader.loadBeanDefinitions(configClasses);
 			alreadyParsed.addAll(configClasses);
 
@@ -438,6 +454,10 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	 * @see ConfigurationClassEnhancer
 	 */
 	public void enhanceConfigurationClasses(ConfigurableListableBeanFactory beanFactory) {
+		/*
+		 * 全部的@Configuration类创建动态代理，并把这些BeanDefinition的class属性换成这种代理类。
+		 * 这又有什么作用呢 ?????
+		 * */
 		Map<String, AbstractBeanDefinition> configBeanDefs = new LinkedHashMap<>();
 		for (String beanName : beanFactory.getBeanDefinitionNames()) {
 			BeanDefinition beanDef = beanFactory.getBeanDefinition(beanName);
@@ -460,6 +480,16 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 					}
 				}
 			}
+			/*
+			* 在之前扫描注解的时候，如果那个类被@Configuration修饰，则把他的对应的BeanDefinition的
+			* configurationClass 属性设置为了 “full”
+			* 不是配置类的设置为了 “lite”
+			* 当遍历到的BeanDefinition是full的时候，也就是说这是个 配置类，
+			* 然而配置类中的所有属性都应该是单例的，
+			*
+			* 所以当出现这种情况的时候： com.szu.spring.txTest.annotation.MyConfiguration 中这样的情况的时候
+			* 创建代理类来保证配置类中的每个 Bean 都是单例的
+			* */
 			if (ConfigurationClassUtils.CONFIGURATION_CLASS_FULL.equals(configClassAttr)) {
 				if (!(beanDef instanceof AbstractBeanDefinition)) {
 					throw new BeanDefinitionStoreException("Cannot enhance @Configuration bean definition '" +
@@ -474,6 +504,9 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 				configBeanDefs.put(beanName, (AbstractBeanDefinition) beanDef);
 			}
 		}
+		/*
+		* 获取到所有的 @Configuration 注解标注的配置类
+		* */
 		if (configBeanDefs.isEmpty()) {
 			// nothing to enhance -> return immediately
 			return;
@@ -486,12 +519,18 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			beanDef.setAttribute(AutoProxyUtils.PRESERVE_TARGET_CLASS_ATTRIBUTE, Boolean.TRUE);
 			// Set enhanced subclass of the user-specified bean class
 			Class<?> configClass = beanDef.getBeanClass();
+			/*
+			* 创建代理类
+			* */
 			Class<?> enhancedClass = enhancer.enhance(configClass, this.beanClassLoader);
 			if (configClass != enhancedClass) {
 				if (logger.isTraceEnabled()) {
 					logger.trace(String.format("Replacing bean definition '%s' existing class '%s' with " +
 							"enhanced class '%s'", entry.getKey(), configClass.getName(), enhancedClass.getName()));
 				}
+				/*
+				* 把@Configuration类的 BeanDefinition的类型换成 代理类对象
+				* */
 				beanDef.setBeanClass(enhancedClass);
 			}
 		}

@@ -738,6 +738,12 @@ class CglibAopProxy implements AopProxy, Serializable {
 					* 在 new这个子类对象的时候，把 chain 赋值给父类的 一个变量 interceptorsAndDynamicMethodMatchers，
 					*
 					* 然后开始链条逻辑的执行
+					*
+					* ==================================
+					* 纯AOP的时候有6个，exposed,before after afterReturning afterThrowing around
+					* 事务的时候有两个  exposed, transactionInterceptor
+					* ==================================
+					*
 					* */
 					retVal = new CglibMethodInvocation(proxy, target, method, args, targetClass, chain, methodProxy).proceed();
 				}

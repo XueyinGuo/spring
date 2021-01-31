@@ -366,6 +366,21 @@ class ConfigurationClassParser {
 		*
 		* 此处也只是进行了一个实例化工作，没有任何进一步处理。 DeferredImportSelector 中也是只放了一些仅仅实例化的Selector
 		* */
+		/*
+		 * ===============================================
+		 * ===============================================
+		 * 执行 ImportSelector 的 selectImports（） 方法
+		 * 每个配置类中导入的那个 Selector中，都有一个方法叫做 selectImports
+		 *
+		 * 比如：开启事务的时候的 @EnableTransactionManagement
+		 *
+		 *  				 @Import(TransactionManagementConfigurationSelector.class)
+		 *  				 public @interface EnableTransactionManagement {
+		 *
+		 *						TransactionManagementConfigurationSelector就实现了  selectImports
+		 * ===============================================
+		 * ===============================================
+		 * */
 		processImports(configClass, sourceClass, getImports(sourceClass), filter, true);
 
 		// Process any @ImportResource annotations
@@ -655,7 +670,21 @@ class ConfigurationClassParser {
 							this.deferredImportSelectorHandler.handle(configClass, (DeferredImportSelector) selector);
 						}
 						else {
-							/* 执行 ImportSelector 的 selectImports（） 方法 */
+							/*
+							* ===============================================
+							* ===============================================
+							* 执行 ImportSelector 的 selectImports（） 方法
+							* 每个配置类中导入的那个 Selector中，都有一个方法叫做 selectImports
+							*
+							* 比如：开启事务的时候的 @EnableTransactionManagement
+							*
+							*  				 @Import(TransactionManagementConfigurationSelector.class)
+							*  				 public @interface EnableTransactionManagement {
+							*
+							*						TransactionManagementConfigurationSelector就实现了  selectImports
+							* ===============================================
+							* ===============================================
+							* */
 							String[] importClassNames = selector.selectImports(currentSourceClass.getMetadata());
 							Collection<SourceClass> importSourceClasses = asSourceClasses(importClassNames, exclusionFilter);
 							/* 被import进来的类也可能加了 @Import，所以递归一下 */

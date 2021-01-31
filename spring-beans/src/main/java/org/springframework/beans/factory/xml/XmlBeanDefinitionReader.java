@@ -343,6 +343,13 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 			if (encodedResource.getEncoding() != null) {
 				inputSource.setEncoding(encodedResource.getEncoding());
 			}
+			/*
+			* =========================================
+			* =========================================
+			* doLoadBeanDefinitions
+			* =========================================
+			* =========================================
+			* */
 			return doLoadBeanDefinitions(inputSource, encodedResource.getResource());
 		}
 		catch (IOException ex) {
@@ -531,10 +538,13 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 		* */
 		int countBefore = getRegistry().getBeanDefinitionCount();
 		/*
+		* =======================================================================
+		* =======================================================================
 		* 完成具体的解析过程
 		* 这里创建了 readerContext 对象在解析XML的输入流的时候要用的！
 		* readerContext 的创建过程就是 读取 "META-INF/spring.handlers" 的内容读进一个 Map
-		*
+		* =======================================================================
+		* =======================================================================
 		* */
 		documentReader.registerBeanDefinitions(doc, createReaderContext(resource));
 		return getRegistry().getBeanDefinitionCount() - countBefore;

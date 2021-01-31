@@ -283,7 +283,7 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 		*
 		* 比如两个在开发中用的很少的两个标签，
 		* <beans>
-		 	<bean id="person" class="com.sztu.spring.Person">
+		 	<bean id="person" class="com.szu.spring.Person">
 		 		<lookup-method/>
 		 		<replaced-method/>
 		 	<bean>

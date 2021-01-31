@@ -66,13 +66,20 @@ public abstract class AopConfigUtils {
 
 	@Nullable
 	public static BeanDefinition registerAutoProxyCreatorIfNecessary(BeanDefinitionRegistry registry) {
+		/*
+		 * 注入 InfrastructureAdvisorAutoProxyCreator 的 BeanDefinition
+		 * 这个 BeanDefinition 与 普通AOP时候的 AspectJAwareAdvisorAutoProxyCreator 是兄弟关系
+		 * */
 		return registerAutoProxyCreatorIfNecessary(registry, null);
 	}
 
 	@Nullable
 	public static BeanDefinition registerAutoProxyCreatorIfNecessary(
 			BeanDefinitionRegistry registry, @Nullable Object source) {
-
+		/*
+		* 注入 InfrastructureAdvisorAutoProxyCreator 的 BeanDefinition
+		* 这个 BeanDefinition 与 普通AOP时候的 AspectJAwareAdvisorAutoProxyCreator 是兄弟关系
+		* */
 		return registerOrEscalateApcAsRequired(InfrastructureAdvisorAutoProxyCreator.class, registry, source);
 	}
 

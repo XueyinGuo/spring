@@ -785,7 +785,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				/*
 				* 实现自定义的 Converter 只能继承三个接口，
 				* 如何添加自定义的 Converter，
-				* <bean id="studentConverter" class="com.sztu.spring.myConverter.StudentConverter"></bean>
+				* <bean id="studentConverter" class="com.szu.spring.myConverter.StudentConverter"></bean>
  					<bean id="conversionService" class="org.springframework.context.support.ConversionServiceFactoryBean">
 					<property name="converters">
 						<set>
@@ -1304,7 +1304,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		/*
 		* 实现自定义的 Converter 只能继承三个接口，
 		* 如何添加自定义的 Converter，
-		* <bean id="studentConverter" class="com.sztu.spring.myConverter.StudentConverter"></bean>
+		* <bean id="studentConverter" class="com.szu.spring.myConverter.StudentConverter"></bean>
  			<bean id="conversionService" class="org.springframework.context.support.ConversionServiceFactoryBean">
 			<property name="converters">
 				<set>

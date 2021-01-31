@@ -439,7 +439,10 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			throws BeansException {
 
 		Object result = existingBean;
-		for (BeanPostProcessor processor : getBeanPostProcessors()) { // BeanPostProcessor可能有多个，BFPP也可能有多个
+		for (BeanPostProcessor processor : getBeanPostProcessors()) {
+			/*
+			* 配置了事务的话会在这里创建事务对象
+			* */// BeanPostProcessor可能有多个，BFPP也可能有多个
 			Object current = processor.postProcessAfterInitialization(result, beanName);
 			if (current == null) {
 				return result;
@@ -551,7 +554,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			*		 	要求的参数先创建好。所以这里的对象的创造，是需要很多层的嵌套的（跨方法递归的）。
 			*
 			*		        		          		   		 { -----> MethodLocatingFactoryBean
-			*			Advisor#0--#4 --->   adviceDef --->  { -----> expression="execution(Integer com.sztu.spring.aopTest.MyCalculator.*(Integer,Integer))"
+			*			Advisor#0--#4 --->   adviceDef --->  { -----> expression="execution(Integer com.szu.spring.aopTest.MyCalculator.*(Integer,Integer))"
 			*						                 	     { -----> SimpleBeanFactoryAwareAspectInstanceFactory
 			*
 			*		 意思就是说在创建 Advisor 的时候， 三个嵌套对象也要创建好
@@ -1579,7 +1582,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		this.currentlyCreatedBean.set(beanName);
 		try {
 			/*
-			* get() 是函数式接口，相当于直接调用在 com\sztu\spring\supplier\SupplierBeanFactoryPostProcessor 中修改后的
+			* get() 是函数式接口，相当于直接调用在 com\szu\spring\supplier\SupplierBeanFactoryPostProcessor 中修改后的
 			* beanDefinition中的 CreateSupplier::createUser 直接返回 User 对象
 			* */
 			instance = instanceSupplier.get();
@@ -1771,7 +1774,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			}
 		}
 		/*
-		  	<bean id="person" class="com.sztu.spring.populateBean.Person" autowire="byName">
+		  	<bean id="person" class="com.szu.spring.populateBean.Person" autowire="byName">
 				<property name="id" value="1"></property>
 				<property name="gender" value="female"></property>
 				<property name="age" value="25"></property>
@@ -1863,7 +1866,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			*  <bean class="org.springframework.beans.factory.config.CustomEditorConfigurer">
 					<property name="propertyEditorRegistrars">
 						<list>
-							<bean class="com.sztu.spring.myRegisterEditor.MyEditorRegistrar"></bean>
+							<bean class="com.szu.spring.myRegisterEditor.MyEditorRegistrar"></bean>
 						</list>
 					</property>
 				</bean>
@@ -2138,7 +2141,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		MutablePropertyValues mpvs = null;
 		/*
-		* 	<bean id="studentConverter" class="com.sztu.spring.myConverter.StudentConverter"></bean>
+		* 	<bean id="studentConverter" class="com.szu.spring.myConverter.StudentConverter"></bean>
 
 			<bean id="conversionService" class="org.springframework.context.support.ConversionServiceFactoryBean">
 				<property name="converters">
@@ -2342,6 +2345,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			/*
 			* postProcessAfterInitialization
 			* */
+			/*
+			 * 配置了事务的话会在这里创建事务对象！！！！！！！！！！！！！！！！！！ AbstractAutowireCapableBeanFactory
+			 * */
 			wrappedBean = applyBeanPostProcessorsAfterInitialization(wrappedBean, beanName);
 		}
 

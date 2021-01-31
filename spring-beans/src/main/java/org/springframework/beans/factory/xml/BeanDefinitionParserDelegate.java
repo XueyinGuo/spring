@@ -572,7 +572,7 @@ public class BeanDefinitionParserDelegate {
 				 	<bean class="org.springframework.beans.factory.config.CustomEditorConfigurer">
 						<property name="propertyEditorRegistrars">
 							<list>
-								<bean class="com.sztu.spring.myRegisterEditor.MyEditorRegistrar"></bean>
+								<bean class="com.szu.spring.myRegisterEditor.MyEditorRegistrar"></bean>
 							</list>
 						</property>
 					</bean>
@@ -1491,7 +1491,7 @@ public class BeanDefinitionParserDelegate {
 		*		这里根据 namespaceUri 去 META-INF的文件夹中获取spring.handlers的内容，获取对象的解析器
 		*
 		* resolve方法 就是 查找对应的 NamespaceHandler
-		* http\://www.guoxueyin.com/schema/gxy=com.sztu.spring.myselfargs.PersonNamespaceHandler
+		* http\://www.guoxueyin.com/schema/gxy=com.szu.spring.myselfargs.PersonNamespaceHandler
 		* 就是这一句定义的东西,,通过反射生成 namespaceUri 对应的解析器： such as: context 的对应解析器
 		* */
 		NamespaceHandler handler = this.readerContext.getNamespaceHandlerResolver().resolve(namespaceUri);

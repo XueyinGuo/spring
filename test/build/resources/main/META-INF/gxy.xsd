@@ -9,7 +9,7 @@
 	<xsd:element name="gxy">
 		<xsd:complexType>
 			<xsd:attribute name = "userName" type="xsd:string"></xsd:attribute>
-			<xsd:attribute name = "lovePerson" type="xsd:string"></xsd:attribute>
+			<xsd:attribute name = "weibo" type="xsd:string"></xsd:attribute>
 			<xsd:attribute name = "id" type="xsd:string"></xsd:attribute>
 		</xsd:complexType>
 	</xsd:element>

@@ -218,7 +218,7 @@ public class MethodProxy {
 			return fci.f1.invoke(fci.i1, obj, args); /* 执行连接点方法的时候了！！！ */
 		}
 		catch (InvocationTargetException ex) {
-			throw ex.getTargetException();
+			throw ex.getTargetException(); /* 自己的方法出现异常之后向外抛出异常 */
 		}
 		catch (IllegalArgumentException ex) {
 			if (fastClassInfo.i1 < 0)

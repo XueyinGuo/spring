@@ -113,7 +113,7 @@ public class AspectJAwareAdvisorAutoProxyCreator extends AbstractAdvisorAutoProx
 		 *
 		 *
 		 *        		          		   { -----> MethodLocatingFactoryBean
-		 *	Advisor --->   adviceDef --->  { -----> expression="execution(Integer com.sztu.spring.aopTest.MyCalculator.*(Integer,Integer))"
+		 *	Advisor --->   adviceDef --->  { -----> expression="execution(Integer com.szu.spring.aopTest.MyCalculator.*(Integer,Integer))"
 		 *		|		      |            { -----> SimpleBeanFactoryAwareAspectInstanceFactory
 		 * 		|			  |								|
 		 * 		|			  |								|

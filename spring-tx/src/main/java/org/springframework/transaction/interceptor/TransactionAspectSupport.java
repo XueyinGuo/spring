@@ -331,10 +331,28 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 			final InvocationCallback invocation) throws Throwable {
 
 		// If the transaction attribute is null, the method is non-transactional.
+		/*
+		* 从配置文件中，找到所有的 method:  <tx:advice ---->	<tx:attributes>	---->	<tx:method
+		* */
 		TransactionAttributeSource tas = getTransactionAttributeSource();
+		/*
+		* 通过事务属性源对象获取到当前方法的事务属性信息
+		* 这些属性值在XML文件中写了的话就是你写的，没写就是默认值（这些值都包括传播特性、是否是只读、超时时间等属性 等等）
+		* */
 		final TransactionAttribute txAttr = (tas != null ? tas.getTransactionAttribute(method, targetClass) : null);
-		final TransactionManager tm = determineTransactionManager(txAttr);
+		/*
+		* 获取我们配置的事务管理器对象，这个对象在配置文件中写了
+		*
+			<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+				<property name="dataSource" ref="dataSource"></property>
+			</bean>
 
+		* 这个 DataSourceTransactionManager 就是 现在的 tm
+		*  */
+		final TransactionManager tm = determineTransactionManager(txAttr);
+		/*
+		* 是否是响应式事务
+		* */
 		if (this.reactiveAdapterRegistry != null && tm instanceof ReactiveTransactionManager) {
 			ReactiveTransactionSupport txSupport = this.transactionSupportCache.computeIfAbsent(method, key -> {
 				if (KotlinDetector.isKotlinType(method.getDeclaringClass()) && KotlinDelegate.isSuspend(method)) {
@@ -352,26 +370,46 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 			return txSupport.invokeWithinTransaction(
 					method, targetClass, invocation, txAttr, (ReactiveTransactionManager) tm);
 		}
-
+		/*
+		* 判断一下当前事务管理器是否是 PlatformTransactionManager，  DataSourceTransactionManager当然是这个类型
+		* */
 		PlatformTransactionManager ptm = asPlatformTransactionManager(tm);
 		final String joinpointIdentification = methodIdentification(method, targetClass, txAttr);
 
 		if (txAttr == null || !(ptm instanceof CallbackPreferringPlatformTransactionManager)) {
 			// Standard transaction demarcation with getTransaction and commit/rollback calls.
+			/*
+			 * ==============================
+			 * ==============================
+			 * 开始创建事务
+			 * ==============================
+			 * ==============================
+			 * */
 			TransactionInfo txInfo = createTransactionIfNecessary(ptm, txAttr, joinpointIdentification);
 
 			Object retVal;
 			try {
 				// This is an around advice: Invoke the next interceptor in the chain.
 				// This will normally result in a target object being invoked.
+				/*
+				* 创建完事务之后就可以开始执行之前纯AOP的时候类似了执行链了，
+				* 执行一些增强的方法逻辑
+				* */
 				retVal = invocation.proceedWithInvocation();
 			}
 			catch (Throwable ex) {
 				// target invocation exception
+				/*
+				* 异常回滚，当自己的业务逻辑抛出异常之后就来到这个方法进行处理
+				* */
 				completeTransactionAfterThrowing(txInfo, ex);
+				/*
+				* 外层事务可能回受到内层事务的影响，因为内层在恢复完老事务现场之后，还会将异常继续上抛出，
+				* 所以如果在service中我们没有捕获异常，service中仍然会受到内层事务的异常通知，从而影响外层事务。
+				*/
 				throw ex;
 			}
-			finally {
+			finally { /* 清除事务信息，刚才 prepareTransactionInfo */
 				cleanupTransactionInfo(txInfo);
 			}
 
@@ -382,7 +420,16 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 					retVal = VavrDelegate.evaluateTryFailure(retVal, txAttr, status);
 				}
 			}
-
+			/* 提交事务，但是只是提交当前 txInfo 中的内层事务，提交也白搭。当最外层的时候才会真正的提交。 */
+			/*
+			 * ============================================================
+			 * ============================================================
+			 * 真正提交的方法，只有一个新事务才会真正的提交，内层事务不是新创建的事务
+			 *
+			 * 但是外层事务提交的时候也会判断有没有设置回滚标记，如果有回滚标记，则也不会提交
+			 * ============================================================
+			 * ============================================================
+			 *  */
 			commitTransactionAfterReturning(txInfo);
 			return retVal;
 		}
@@ -560,6 +607,9 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 
 		// If no name specified, apply method identification as transaction name.
 		if (txAttr != null && txAttr.getName() == null) {
+			/*
+			* 用方法的当前执行的事务方法的完全限定名当做这个事务的名称
+			* */
 			txAttr = new DelegatingTransactionAttribute(txAttr) {
 				@Override
 				public String getName() {
@@ -567,10 +617,25 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 				}
 			};
 		}
-
+		/*
+		* 事务状态：其中一个方法 hasSavepoint(),
+		* 	Q：什么是保存点？
+		* 		A：当我们执行方法的时候，如果 A B C D 四个方法的嵌套，在最后的D中出现了异常，但是我们只想回滚到 B 方法，前边的A执行完不想回滚
+		* 		   这时候我们就需要保存点这个东西了！
+		* */
 		TransactionStatus status = null;
 		if (txAttr != null) {
 			if (tm != null) {
+				/*
+				* 在事务管理器中获取事务状态，传入 当前调用方法的 传播特性、是否是只读、超时时间等属性
+				* */
+				/*
+				 * ===============================
+				 * ===============================
+				 * 开启事务   设置各种线程私有变量的状态，6个全部设置全了
+				 * ===============================
+				 * ===============================
+				 * */
 				status = tm.getTransaction(txAttr);
 			}
 			else {
@@ -580,6 +645,16 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 				}
 			}
 		}
+		/*
+		* TransactionInfo，新建一个，然后新旧信息交换
+		*
+		* ==================================================================================
+		* Q ： 这个旧状态是什么？
+		*
+		* 		A ： 还是这个 A B 的嵌套调用，假设A是REQUIRED、 B是REQUIRED_NEW，嵌套事务总会创建一个新的事务，嵌套执行完后还要回去执行老事务
+		* 			所以之前的也一定要保留下来（就跟线程切换的保存现场和恢复现场一样）
+		* ==================================================================================
+		* */
 		return prepareTransactionInfo(tm, txAttr, joinpointIdentification, status);
 	}
 
@@ -594,7 +669,7 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 	protected TransactionInfo prepareTransactionInfo(@Nullable PlatformTransactionManager tm,
 			@Nullable TransactionAttribute txAttr, String joinpointIdentification,
 			@Nullable TransactionStatus status) {
-
+		/* TransactionInfo */
 		TransactionInfo txInfo = new TransactionInfo(tm, txAttr, joinpointIdentification);
 		if (txAttr != null) {
 			// We need a transaction for this method...
@@ -616,6 +691,9 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 		// We always bind the TransactionInfo to the thread, even if we didn't create
 		// a new transaction here. This guarantees that the TransactionInfo stack
 		// will be managed correctly even if no transaction was created by this aspect.
+		/*
+		* 旧的事务信息和新事务新的转换
+		* */
 		txInfo.bindToThread();
 		return txInfo;
 	}
@@ -630,6 +708,13 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 			if (logger.isTraceEnabled()) {
 				logger.trace("Completing transaction for [" + txInfo.getJoinpointIdentification() + "]");
 			}
+			/*
+			 * ============================================================
+			 * ============================================================
+			 * 真正提交的方法，只有一个新事务才会真正的提交，内层事务不是新创建的事务
+			 * ============================================================
+			 * ============================================================
+			 *  */
 			txInfo.getTransactionManager().commit(txInfo.getTransactionStatus());
 		}
 	}
@@ -648,6 +733,9 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 			}
 			if (txInfo.transactionAttribute != null && txInfo.transactionAttribute.rollbackOn(ex)) {
 				try {
+					/*
+					* 发生异常的时候最终在这里进行回滚
+					* */
 					txInfo.getTransactionManager().rollback(txInfo.getTransactionStatus());
 				}
 				catch (TransactionSystemException ex2) {
@@ -686,6 +774,13 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 	 */
 	protected void cleanupTransactionInfo(@Nullable TransactionInfo txInfo) {
 		if (txInfo != null) {
+			/*
+			 * oldTransactionInfo恢复回去，
+			 * 例子中就是 checkout（service） 方法 调用了 DAO中的方法，
+			 * 当DAO中的方法执行完之后，再恢复回去 service 的状态
+			 *
+			 * service 也会恢复老状态，只不过老状态为空
+			 * */
 			txInfo.restoreThreadLocalStatus();
 		}
 	}
@@ -764,6 +859,11 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 		private void restoreThreadLocalStatus() {
 			// Use stack to restore old transaction TransactionInfo.
 			// Will be null if none was set.
+			/*
+			* oldTransactionInfo恢复回去，
+			* 例子中就是 checkout（service） 方法 调用了 DAO中的方法，
+			* 当DAO中的方法执行完之后，再恢复回去 service 的状态
+			* */
 			transactionInfoHolder.set(this.oldTransactionInfo);
 		}
 

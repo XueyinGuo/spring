@@ -70,6 +70,10 @@ public class AutoProxyRegistrar implements ImportBeanDefinitionRegistrar {
 					Boolean.class == proxyTargetClass.getClass()) {
 				candidateFound = true;
 				if (mode == AdviceMode.PROXY) {
+					/*
+					 * 注入 InfrastructureAdvisorAutoProxyCreator 的 BeanDefinition
+					 * 这个 BeanDefinition 与 普通AOP时候的 AspectJAwareAdvisorAutoProxyCreator 是兄弟关系
+					 * */
 					AopConfigUtils.registerAutoProxyCreatorIfNecessary(registry);
 					if ((Boolean) proxyTargetClass) {
 						AopConfigUtils.forceAutoProxyCreatorToUseClassProxying(registry);

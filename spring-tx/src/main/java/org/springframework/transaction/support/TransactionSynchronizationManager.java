@@ -137,6 +137,10 @@ public abstract class TransactionSynchronizationManager {
 	@Nullable
 	public static Object getResource(Object key) {
 		Object actualKey = TransactionSynchronizationUtils.unwrapResourceIfNecessary(key);
+		/*
+		 * 在当前的 ThreadLocal 中找到和 key对应的事务
+		 * 如果当前 map 为空则直接返回空
+		 * */
 		Object value = doGetResource(actualKey);
 		if (value != null && logger.isTraceEnabled()) {
 			logger.trace("Retrieved value [" + value + "] for key [" + actualKey + "] bound to thread [" +
@@ -150,6 +154,10 @@ public abstract class TransactionSynchronizationManager {
 	 */
 	@Nullable
 	private static Object doGetResource(Object actualKey) {
+		/*
+		* 在当前的 ThreadLocal 中找到和 key对应的事务
+		* 如果当前 map 为空则直接返回空
+		* */
 		Map<Object, Object> map = resources.get();
 		if (map == null) {
 			return null;
@@ -177,6 +185,9 @@ public abstract class TransactionSynchronizationManager {
 	public static void bindResource(Object key, Object value) throws IllegalStateException {
 		Object actualKey = TransactionSynchronizationUtils.unwrapResourceIfNecessary(key);
 		Assert.notNull(value, "Value must not be null");
+		/*
+		* 把刚才的 resource， ThreadLocal变量中赋值
+		* */
 		Map<Object, Object> map = resources.get();
 		// set ThreadLocal Map if none found
 		if (map == null) {
@@ -207,6 +218,9 @@ public abstract class TransactionSynchronizationManager {
 	 */
 	public static Object unbindResource(Object key) throws IllegalStateException {
 		Object actualKey = TransactionSynchronizationUtils.unwrapResourceIfNecessary(key);
+		/*
+		 * 删除掉当前的 ThreadLocal变量之一 resources 中的信息
+		 * */
 		Object value = doUnbindResource(actualKey);
 		if (value == null) {
 			throw new IllegalStateException(
@@ -238,6 +252,9 @@ public abstract class TransactionSynchronizationManager {
 		Object value = map.remove(actualKey);
 		// Remove entire ThreadLocal if empty...
 		if (map.isEmpty()) {
+			/*
+			* 删除掉当前的 ThreadLocal 中的信息
+			* */
 			resources.remove();
 		}
 		// Transparently suppress a ResourceHolder that was marked as void...

@@ -153,7 +153,10 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
 	 * with the supplied {@link BeanDefinitionRegistry}.
 	 */
 	private void parseAdvisor(Element advisorElement, ParserContext parserContext) {
-		AbstractBeanDefinition advisorDef = createAdvisorBeanDefinition(advisorElement, parserContext); /* 创建 DefaultBeanFactoryPointcutAdvisor 的 BeanDefinition */
+		/*
+		* 创建 DefaultBeanFactoryPointcutAdvisor 的 BeanDefinition
+		*  */
+		AbstractBeanDefinition advisorDef = createAdvisorBeanDefinition(advisorElement, parserContext);
 		String id = advisorElement.getAttribute(ID);
 
 		try {
@@ -266,7 +269,7 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
 					* 创建三个 RootBeanDefinition，封装给 adviceDef 然后外边再套一层  Advisor
 					*
 					*                   		       { -----> MethodLocatingFactoryBean
-					*	Advisor --->   adviceDef --->  { -----> expression="execution(Integer com.sztu.spring.aopTest.MyCalculator.*(Integer,Integer))"
+					*	Advisor --->   adviceDef --->  { -----> expression="execution(Integer com.szu.spring.aopTest.MyCalculator.*(Integer,Integer))"
 					*				                   { -----> SimpleBeanFactoryAwareAspectInstanceFactory
 					*  */
 					AbstractBeanDefinition advisorDefinition = parseAdvice(
@@ -401,7 +404,7 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
 			* 			2.找到方法之后应该去哪里找对应的advice呢？去第三个参数中找对应的额外触发逻辑
 			*
 			* adviceDef { -----> MethodLocatingFactoryBean
-			* 			{ -----> expression="execution(Integer com.sztu.spring.aopTest.MyCalculator.*(Integer,Integer))"
+			* 			{ -----> expression="execution(Integer com.szu.spring.aopTest.MyCalculator.*(Integer,Integer))"
 			* 			{ -----> SimpleBeanFactoryAwareAspectInstanceFactory
 			* */
 			AbstractBeanDefinition adviceDef = createAdviceDefinition(
@@ -425,7 +428,7 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
 			* 把包装完的 Advisor的BeanDefinition注册到 BeanFactory
 			*
 			*                   		      { -----> MethodLocatingFactoryBean
-			*  Advisor --->   adviceDef --->  { -----> expression="execution(Integer com.sztu.spring.aopTest.MyCalculator.*(Integer,Integer))"
+			*  Advisor --->   adviceDef --->  { -----> expression="execution(Integer com.szu.spring.aopTest.MyCalculator.*(Integer,Integer))"
 			*			                      { -----> SimpleBeanFactoryAwareAspectInstanceFactory
 			* */
 			parserContext.getReaderContext().registerWithGeneratedName(advisorDefinition);
@@ -487,7 +490,7 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
 		*
 		* addIndexedArgumentValue！！！可以设置参数的位置
 		*
-		*			<bean id="s" class="com.sztu.spring.Person">
+		*			<bean id="s" class="com.szu.spring.Person">
 		*				<constructor-arg index=""
 		*			</bean>
 		*
@@ -601,7 +604,7 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
 		* <aop:around method="around" pointcut-ref="myPoint"></aop:around>
 		* 包含 pointcut-ref，指向一个 myPoint
 		* 而且 myPoint 是一个表达式
-		* expression="execution(Integer com.sztu.spring.aopTest.MyCalculator.*(Integer,Integer))"
+		* expression="execution(Integer com.szu.spring.aopTest.MyCalculator.*(Integer,Integer))"
 		*  */
 		else if (element.hasAttribute(POINTCUT_REF)) {
 			String pointcutRef = element.getAttribute(POINTCUT_REF);

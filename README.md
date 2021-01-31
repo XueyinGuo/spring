@@ -1,30 +1,31 @@
-# <img src="src/docs/asciidoc/images/spring-framework.png" width="80" height="80"> Spring Framework [![Build Status](https://build.spring.io/plugins/servlet/wittified/build-status/SPR-PUBM)](https://build.spring.io/browse/SPR)
 
-This is the home of the Spring Framework: the foundation for all [Spring projects](https://spring.io/projects). Collectively the Spring Framework and the family of Spring projects are often referred to simply as "Spring". 
 
-Spring provides everything required beyond the Java programming language for creating enterprise applications for a wide range of scenarios and architectures. Please read the [Overview](https://docs.spring.io/spring/docs/current/spring-framework-reference/overview.html#spring-introduction) section as reference for a more complete introduction.
+## 1. test Module 中 com.szu.spring.allInOne.IocXMLTest 是整个IOC容器的所有功能的总结
 
-## Code of Conduct
+------------------
 
-This project is governed by the [Spring Code of Conduct](CODE_OF_CONDUCT.adoc). By participating, you are expected to uphold this code of conduct. Please report unacceptable behavior to spring-code-of-conduct@pivotal.io.
+## 2. com.szu.spring.allInOne.CycleReferenceTest 是对 循环依赖的测试
 
-## Access to Binaries
+------------------
 
-For access to artifacts or a distribution zip, see the [Spring Framework Artifacts](https://github.com/spring-projects/spring-framework/wiki/Spring-Framework-Artifacts) wiki page.
+## 2. proxy包中是动态代理源码，字节码生成过程
 
-## Documentation
+------------------
 
-The Spring Framework maintains reference documentation ([published](https://docs.spring.io/spring-framework/docs/current/spring-framework-reference/) and [source](src/docs/asciidoc)), Github [wiki pages](https://github.com/spring-projects/spring-framework/wiki), and an
-[API reference](https://docs.spring.io/spring-framework/docs/current/javadoc-api/). There are also [guides and tutorials](https://spring.io/guides) across Spring projects.
+## 3.  com.szu.spring.allInOne.AopXMLTest
 
-## Build from Source
+------------------
 
-See the [Build from Source](https://github.com/spring-projects/spring-framework/wiki/Build-from-Source) Wiki page and the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+## 4. com.szu.spring.allInOne.TransactionXMLTest
 
-## Stay in Touch
+------------------
 
-Follow [@SpringCentral](https://twitter.com/springcentral), [@SpringFramework](https://twitter.com/springframework), and its [team members](https://twitter.com/springframework/lists/team/members) on Twitter. In-depth articles can be found at [The Spring Blog](https://spring.io/blog/), and releases are announced via our [news feed](https://spring.io/blog/category/news).
+## 5. 配置文件的所有东西理解完，纯注解驱动就很容易了，无非是对XML的扩展
 
-## License
+------------------
 
-The Spring Framework is released under version 2.0 of the [Apache License](https://www.apache.org/licenses/LICENSE-2.0).
+**详细注释均写在各个方法中，最重要的方法是：refresh()，**
+**只要看完了看懂了这个方法，Spring源码就知道他在干什么了**
+
+
+**学海无涯，回头是岸。**

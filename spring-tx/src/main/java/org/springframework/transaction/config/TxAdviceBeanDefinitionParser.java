@@ -100,13 +100,15 @@ class TxAdviceBeanDefinitionParser extends AbstractSingleBeanDefinitionParser {
 
 	private RootBeanDefinition parseAttributeSource(Element attrEle, ParserContext parserContext) {
 		/*
-		* 获取 <tx:attributes>中所有的 <tx:method
+		* 获取 <tx:attributes> 中所有的 <tx:method
 		* */
 		List<Element> methods = DomUtils.getChildElementsByTagName(attrEle, METHOD_ELEMENT);
 		ManagedMap<TypedStringValue, RuleBasedTransactionAttribute> transactionAttributeMap =
 				new ManagedMap<>(methods.size());
 		transactionAttributeMap.setSource(parserContext.extractSource(attrEle));
-
+		/*
+		 * tx:advice 中 tx:attributes 中的所有的 tx:method
+		 */
 		for (Element methodEle : methods) {
 			String name = methodEle.getAttribute(METHOD_NAME_ATTRIBUTE);
 			TypedStringValue nameHolder = new TypedStringValue(name);
@@ -148,11 +150,16 @@ class TxAdviceBeanDefinitionParser extends AbstractSingleBeanDefinitionParser {
 
 			transactionAttributeMap.put(nameHolder, attribute);
 		}
-		/* 创建一个新的 NameMatchTransactionAttributeSource的 BeanDefinition */
+		/*
+		* 创建一个新的 NameMatchTransactionAttributeSource的 BeanDefinition
+		* */
 		RootBeanDefinition attributeSourceDefinition = new RootBeanDefinition(NameMatchTransactionAttributeSource.class);
 		attributeSourceDefinition.setSource(parserContext.extractSource(attrEle));
 		attributeSourceDefinition.getPropertyValues().add("nameMap", transactionAttributeMap);
-		return attributeSourceDefinition; /* 这个 BeanDefinition 存放的都是 tx:advice 中 tx:attributes 中的所有的 tx:method */
+		/*
+		* 这个 BeanDefinition 存放的都是 tx:advice 中 tx:attributes 中的所有的 tx:method
+		* */
+		return attributeSourceDefinition;
 	}
 
 	private void addRollbackRuleAttributesTo(List<RollbackRuleAttribute> rollbackRules, String rollbackForValue) {

@@ -113,7 +113,7 @@ final class PostProcessorRegistrationDelegate {
 
 			for (String ppName : postProcessorNames) {
 				/*
-				 * 打开 <context:component-scan base-package="com.sztu"></context:component-scan> 之后，
+				 * 打开 <context:component-scan base-package="com.szu"></context:component-scan> 之后，
 				 * isTypeMatch(“internalConfigurationAnnotationProcessor”, PriorityOrdered.class) 方法执行时
 				 * org.springframework.context.annotation.internalConfigurationAnnotationProcessor 找不到任何匹配类之后
 				 * 直接 fallback 成 ConfigurationClassPostProcessor ， 然而 ConfigurationClassPostProcessor 实现了 PriorityOrdered
@@ -137,7 +137,7 @@ final class PostProcessorRegistrationDelegate {
 			sortPostProcessors(currentRegistryProcessors, beanFactory);
 			registryProcessors.addAll(currentRegistryProcessors);
 			/*
-			* 打开 <context:component-scan base-package="com.sztu"></context:component-scan> 之后，这里会直接跳入 ConfigurationClassPostProcessor
+			* 打开 <context:component-scan base-package="com.szu"></context:component-scan> 之后，这里会直接跳入 ConfigurationClassPostProcessor
 			* */
 			invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);
 			currentRegistryProcessors.clear();
@@ -189,6 +189,16 @@ final class PostProcessorRegistrationDelegate {
 			/*
 			* 执行 实现 BeanDefinitionRegistryPostProcessor 接口的 所有类的 postProcessBeanFactory 方法
 			* */
+			/*
+			 * 在之前扫描注解的时候，如果那个类被@Configuration修饰，则把他的对应的BeanDefinition的
+			 * configurationClass 属性设置为了 “full”
+			 * 不是配置类的设置为了 “lite”
+			 * 当遍历到的BeanDefinition是full的时候，也就是说这是个 配置类，
+			 * 然而配置类中的所有属性都应该是单例的，
+			 *
+			 * 所以当出现这种情况的时候： com.szu.spring.txTest.annotation.MyConfiguration 中这样的情况的时候
+			 * 创建代理类来保证配置类中的每个 Bean 都是单例的
+			 * */
 			invokeBeanFactoryPostProcessors(registryProcessors, beanFactory);
 			invokeBeanFactoryPostProcessors(regularPostProcessors, beanFactory);
 		}
@@ -363,7 +373,16 @@ final class PostProcessorRegistrationDelegate {
 	 */
 	private static void invokeBeanFactoryPostProcessors(
 			Collection<? extends BeanFactoryPostProcessor> postProcessors, ConfigurableListableBeanFactory beanFactory) {
-
+		/*
+		 * 在之前扫描注解的时候，如果那个类被@Configuration修饰，则把他的对应的BeanDefinition的
+		 * configurationClass 属性设置为了 “full”
+		 * 不是配置类的设置为了 “lite”
+		 * 当遍历到的BeanDefinition是full的时候，也就是说这是个 配置类，
+		 * 然而配置类中的所有属性都应该是单例的，
+		 *
+		 * 所以当出现这种情况的时候： com.szu.spring.txTest.annotation.MyConfiguration 中这样的情况的时候
+		 * 创建代理类来保证配置类中的每个 Bean 都是单例的
+		 * */
 		for (BeanFactoryPostProcessor postProcessor : postProcessors) {
 			postProcessor.postProcessBeanFactory(beanFactory);
 		}

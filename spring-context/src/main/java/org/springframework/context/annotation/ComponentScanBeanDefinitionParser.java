@@ -152,7 +152,7 @@ public class ComponentScanBeanDefinitionParser implements BeanDefinitionParser {
 				readerContext.getEnvironment(), readerContext.getResourceLoader());
 	}
 	/*
-	* 在打开 <context:component-scan base-package="com.sztu"></context:component-scan>
+	* 在打开 <context:component-scan base-package="com.szu"></context:component-scan>
 	* 之后在这里进行一系列的 internal 的赋值操作 AnnotationConfigUtils.registerAnnotationConfigProcessors()中完成
 	* */
 	protected void registerComponents(

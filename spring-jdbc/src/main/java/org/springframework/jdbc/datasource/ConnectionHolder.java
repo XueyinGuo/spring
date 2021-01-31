@@ -184,6 +184,10 @@ public class ConnectionHolder extends ResourceHolderSupport {
 	 */
 	public Savepoint createSavepoint() throws SQLException {
 		this.savepointCounter++;
+		/*
+		* 创建一个保存点的名字，并继续创建保存点，最后调用到数据源中，
+		* 数据源继续调用下层的mysql驱动代码创建保存点
+		* */
 		return getConnection().setSavepoint(SAVEPOINT_NAME_PREFIX + this.savepointCounter);
 	}
 

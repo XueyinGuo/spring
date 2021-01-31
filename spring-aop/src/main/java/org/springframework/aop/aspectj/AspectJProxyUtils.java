@@ -71,6 +71,7 @@ public abstract class AspectJProxyUtils {
 			if (foundAspectJAdvice && !advisors.contains(ExposeInvocationInterceptor.ADVISOR)) {
 				/*
 				* ==================================================================
+				* 但是创建事务的时候就不需要这个链条中转站了
 				* */
 				advisors.add(0, ExposeInvocationInterceptor.ADVISOR);
 				return true;

@@ -157,6 +157,10 @@ public abstract class JdbcTransactionObjectSupport implements SavepointManager, 
 				throw new CannotCreateTransactionException(
 						"Cannot create savepoint for transaction which is already marked as rollback-only");
 			}
+			/*
+			 * 创建保存点，最后调用到数据源中，
+			 * 数据源继续调用下层的mysql驱动代码创建保存点
+			 * */
 			return conHolder.createSavepoint();
 		}
 		catch (SQLException ex) {
@@ -172,7 +176,13 @@ public abstract class JdbcTransactionObjectSupport implements SavepointManager, 
 	public void rollbackToSavepoint(Object savepoint) throws TransactionException {
 		ConnectionHolder conHolder = getConnectionHolderForSavepoint();
 		try {
+			/*
+			 * 回滚到保存点
+			 * */
 			conHolder.getConnection().rollback((Savepoint) savepoint);
+			/*
+			* 重置回滚标记，之后就不需要回滚了。
+			* */
 			conHolder.resetRollbackOnly();
 		}
 		catch (Throwable ex) {
