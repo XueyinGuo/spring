@@ -664,6 +664,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 					* MergedBeanDefinitionPostProcessor 后置处理器修改合并 Bean定义信息
 					*
 					* @PostConstruct  @PreDestroy  @Resource 注解的处理
+					* @Autowired @Value注解的处理
 					* 并把找到的方法们加入到对应的BeanDefinition的某个属性值中，TODO 等待填充完属性和执行完所有的before after init 等方法之后调用？
 					* */
 					applyMergedBeanDefinitionPostProcessors(mbd, beanType, beanName);
@@ -1207,6 +1208,10 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				}
 			}
 		}
+		/*
+		* 如果没有配置AOP，则返回之前创建的 半成品对象
+		* 如果有 AOP 返回代理对象
+		* */
 		return exposedObject;
 	}
 

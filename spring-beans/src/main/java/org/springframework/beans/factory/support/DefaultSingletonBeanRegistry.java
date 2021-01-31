@@ -211,22 +211,42 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	protected Object getSingleton(String beanName, boolean allowEarlyReference) {
 		// Quick check for existing instance without full singleton lock
 		Object singletonObject = this.singletonObjects.get(beanName);
-		/* 在一级缓存中没找到，而且当前的beanName对应的Bean正在创建过程中 */
+		/* 在一级缓存中没找到，而且当前的beanName对应的Bean正在创建过程中
+		* 	在 beforeSingletonCreation() 中，会把当前正在创建的 beanName 加入到这个集合中
+		*  */
 		if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
-			/* 在二级缓存中 查找当前 bean */
+			/* 在二级缓存中 查找当前 bean，
+			* A 半成品创建完毕之后 给属性 B赋值 --> 创建B对象 给A属性赋值 ---> A 正在创建过程中 但是三个缓存中现在只有三级缓存中的 lambda，
+			* 	没有任何成品或者半成品对象
+			*  */
 			singletonObject = this.earlySingletonObjects.get(beanName);
-			/* 二级缓存中也没找到 */
+			/* 二级缓存中也没找到，而且允许早期引用 */
 			if (singletonObject == null && allowEarlyReference) {
 				synchronized (this.singletonObjects) {
 					// Consistent creation of early reference within full singleton lock
+					/* 再从一级缓存取 */
 					singletonObject = this.singletonObjects.get(beanName);
 					if (singletonObject == null) {
+						/* 再从二级缓存取 */
 						singletonObject = this.earlySingletonObjects.get(beanName);
 						if (singletonObject == null) {
+							/*
+							* 三级缓存中取
+							* 找到对应的 lambda 表达式
+							* 开始执行放进去的那个 lambda 表达式
+							* */
 							ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
 							if (singletonFactory != null) {
+								/*
+								 * 如果没有配置AOP，则返回之前创建的 半成品对象
+								 * 如果有 AOP 返回代理对象
+								 * */
 								singletonObject = singletonFactory.getObject();
+								/*
+								* 把半成品对象放进二级缓存，有可能是代理对象，有可能是普通对象
+								* */
 								this.earlySingletonObjects.put(beanName, singletonObject);
+								/* 三级缓存中移除 lambda */
 								this.singletonFactories.remove(beanName);
 							}
 						}
