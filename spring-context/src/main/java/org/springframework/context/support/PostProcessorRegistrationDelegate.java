@@ -364,6 +364,24 @@ final class PostProcessorRegistrationDelegate {
 			Collection<? extends BeanDefinitionRegistryPostProcessor> postProcessors, BeanDefinitionRegistry registry) {
 
 		for (BeanDefinitionRegistryPostProcessor postProcessor : postProcessors) {
+			/*
+			 * 处理配置类的定义信息
+			 * */
+			/*
+			 * 从标注了 @Component, @Repository, @Service, @Controller, @RestController, @ControllerAdvice, and
+			 * @Configuration 的 candidates 中解析 又标注了
+			 * @Import @ImportResource @ComponentScan @ComponentScans @Bean 的 */
+			/*
+			 * 经过一系列判断之后开始进行注解的处理工作
+			 * 1.先处理内部类，处理内部类的最后 还是调用 doProcessConfigurationClass() 方法
+			 * 2.处理属性资源文件， 加了@PropertySource 的注解
+			 * 3.处理@ComponentScan 或者 @ComponentScans 注解
+			 * 4.处理加了 @Import 的 bean，用了一个比较麻烦的方法 processImports()
+			 * 		4.1 遍历每个加了 @Import 的类
+			 * 		4.2 被import进来的类也可能加了 @Import，所以递归一下
+			 * 5.处理 @ImportResource 引入的配置文件
+			 * 6.处理加了 @Bean 的方法
+			 * */
 			postProcessor.postProcessBeanDefinitionRegistry(registry);
 		}
 	}

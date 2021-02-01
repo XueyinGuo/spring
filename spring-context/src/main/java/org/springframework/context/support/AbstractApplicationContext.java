@@ -1127,6 +1127,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		 * 然后还会进行注解的处理工作，配置类的定义信息
 		 * */
 		/*
+		 * =============================================
+		 * invokeBeanDefinitionRegistryPostProcessor（）
+		 * =============================================
 		 * 从标注了 @Component, @Repository, @Service, @Controller, @RestController, @ControllerAdvice, and
 		 * @Configuration 的 candidates 中解析 又标注了
 		 * @Import @ImportResource @ComponentScan @ComponentScans @Bean 的 */
@@ -1140,6 +1143,22 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		 * 		4.2 被import进来的类也可能加了 @Import，所以递归一下
 		 * 5.处理 @ImportResource 引入的配置文件
 		 * 6.处理加了 @Bean 的方法
+		 * */
+		/*
+		 * =============================================
+		 * invokeBeanFactoryPostProcessor（）
+		 * =============================================
+		 * 在此方法中创建所有的 @Configuration 注解标注的配置类，并给这些创建！！！代理对象！！
+		 * */
+		/*
+		 * 在之前扫描注解的时候，如果那个类被@Configuration修饰，则把他的对应的BeanDefinition的
+		 * configurationClass 属性设置为了 “full”
+		 * 不是配置类的设置为了 “lite”
+		 * 当遍历到的BeanDefinition是full的时候，也就是说这是个 配置类，
+		 * 然而配置类中的所有属性都应该是单例的，
+		 *
+		 * 所以当出现这种情况的时候： com.szu.spring.txTest.annotation.MyConfiguration 中这样的情况的时候
+		 * 创建代理类来保证配置类中的每个 Bean 都是单例的
 		 * */
 		/*
 		 *
