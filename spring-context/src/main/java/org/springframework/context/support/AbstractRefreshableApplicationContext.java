@@ -128,7 +128,7 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 		}
 		try {
 			/*
-			* 创建一个新的DefaultListableBeanFactory对象
+			* 创建一个新的 DefaultListableBeanFactory 对象
 			* 设置了一些Aware接口的忽略
 			* 还设置了一些比较重要的属性值
 			* 比如：allowBeanDefinitionOverriding 和 allowCircularReference，

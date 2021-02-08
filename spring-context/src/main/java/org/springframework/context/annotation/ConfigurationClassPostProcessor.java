@@ -274,7 +274,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		* 在此方法中创建所有的 @Configuration 注解标注的配置类，并给这些创建！！！代理对象！！
 		* */
 		/*
-		 * 在之前扫描注解的时候，如果那个类被@Configuration修饰，则把他的对应的BeanDefinition的
+		 * 在之前扫描注解的时候，如果那个类被@Configuration 修饰，则把他的对应的BeanDefinition的
 		 * configurationClass 属性设置为了 “full”
 		 * 不是配置类的设置为了 “lite”
 		 * 当遍历到的BeanDefinition是full的时候，也就是说这是个 配置类，

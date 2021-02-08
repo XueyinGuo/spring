@@ -23,13 +23,13 @@ public class MyClassPathXmlApplicationContext extends ClassPathXmlApplicationCon
 
 	@Override
 	protected void customizeBeanFactory(DefaultListableBeanFactory beanFactory) {
-		super.setAllowBeanDefinitionOverriding(false);
-		/*
-		* 添加 BFPP 的一个办法
-		* */
-		super.addBeanFactoryPostProcessor(new MyBeanFactoryProcessor());
-		super.setAllowCircularReferences(false);
-		super.customizeBeanFactory(beanFactory);
+//		super.setAllowBeanDefinitionOverriding(false);
+//		/*
+//		* 添加 BFPP 的一个办法
+//		* */
+//		super.addBeanFactoryPostProcessor(new MyBeanFactoryProcessor());
+//		super.setAllowCircularReferences(false);
+//		super.customizeBeanFactory(beanFactory);
 	}
 
 	@Override

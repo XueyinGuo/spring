@@ -1,5 +1,7 @@
 package com.szu.spring;
 
+import java.util.List;
+
 public class Person {
 	private String userName;
 	private String email;

@@ -714,7 +714,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				 * 6.处理加了 @Bean 的方法
 				 * */
 				/*
-				* 如果有数据库配置 文件， ${jdbc.userName}这种属性值，在一个 PropertySourcesPlaceholderCOnfigurer 中进行解析替换工作
+				* 如果有数据库配置 文件， ${jdbc.userName}这种属性值，在一个 PropertySourcesPlaceholderConfigurer 中进行解析替换工作
 				* */
 				invokeBeanFactoryPostProcessors(beanFactory);
 
