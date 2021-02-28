@@ -112,6 +112,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 * 		5. myCalculator             -> 包含的连接点方法的类，执行这些满足 myPoint(表达式规则) 的方法时 去 logUtil（切面）找到合适的 Advisor#0--#4 方法执行
 * */
 public class AopXMLTest {
+
 	public static void main(String[] args) throws NoSuchMethodException {
 		ClassPathXmlApplicationContext classPathXmlApplicationContext = new ClassPathXmlApplicationContext("aop.xml");
 		MyCalculator bean = classPathXmlApplicationContext.getBean(MyCalculator.class);
