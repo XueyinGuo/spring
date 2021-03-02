@@ -394,9 +394,9 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 		/*
 		 * 传播特性验证 REQUIRED   REQUIRES_NEW    NESTED
 		 *
-		 * -----REQUIRED --->  使用当前事务，如果没有，创建一个事务
+		 * -----REQUIRED ----> 使用当前事务，如果没有，创建一个事务
 		 * ------SUPPORTS ---> 如果有，就使用当前事务，如果没有就不用事务了
-		 * --MANDATORY --> 使用当前事务，如果没有事务就直接抛出异常
+		 * ------MANDATORY --> 使用当前事务，如果没有事务就直接抛出异常
 		 *
 		 * */
 		else if (def.getPropagationBehavior() == TransactionDefinition.PROPAGATION_REQUIRED ||
