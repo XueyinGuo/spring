@@ -1,13 +1,4 @@
-plugins {
-    id 'java'
-}
-
-group 'org.springframework'
-version '5.2.13.BUILD-SNAPSHOT'
-
-repositories {
-    mavenCentral()
-}
+description = "test"
 
 dependencies {
     compile(project(":spring-aop"))
@@ -22,6 +13,3 @@ dependencies {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
 
-test {
-    useJUnitPlatform()
-}

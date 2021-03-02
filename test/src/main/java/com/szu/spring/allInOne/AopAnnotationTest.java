@@ -12,6 +12,7 @@ public class AopAnnotationTest {
 		 * */
 		/*
 		 * 1. 把刚刚创建的工厂也赋值给 这个对象中的属性
+		 *
 		 * 2. setEnvironment(environment);
 		 * */
 		AnnotationConfigApplicationContext annotationConfigApplicationContext = new AnnotationConfigApplicationContext();
