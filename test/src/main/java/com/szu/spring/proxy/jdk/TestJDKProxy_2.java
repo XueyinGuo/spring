@@ -7,7 +7,7 @@ public class TestJDKProxy_2 {
 
 		System.getProperties().put("jdk.proxy.ProxyGenerator.saveGeneratedFiles", "true");
 		System.getProperties().put("sun.misc.ProxyGenerator.saveGeneratedFiles", "true");
-		Object proxy = new com.szu.spring.proxy.jdk.CalculatorProxy_2().getProxy(new com.szu.spring.proxy.jdk.MyCalculatorForJDKProxy());
+		Object proxy = new com.szu.spring.proxy.jdk.CalculatorProxy_2().getProxy(new com.szu.spring.allInOne.proxy.jdk.MyCalculatorForJDKProxy());
 		if (proxy instanceof com.szu.spring.proxy.jdk.CalculatorForJDKProxy){
 			com.szu.spring.proxy.jdk.CalculatorForJDKProxy calculator = (com.szu.spring.proxy.jdk.CalculatorForJDKProxy) proxy;
 			int add = calculator.add(1, 1);

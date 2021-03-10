@@ -1,4 +1,6 @@
-package com.szu.spring.proxy.jdk;
+package com.szu.spring.allInOne.proxy.jdk;
+
+import com.szu.spring.proxy.jdk.CalculatorForJDKProxy;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;

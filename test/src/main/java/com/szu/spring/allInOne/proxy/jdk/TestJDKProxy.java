@@ -1,4 +1,7 @@
-package com.szu.spring.proxy.jdk;
+package com.szu.spring.allInOne.proxy.jdk;
+
+import com.szu.spring.proxy.jdk.CalculatorForJDKProxy;
+import com.szu.spring.allInOne.proxy.jdk.MyCalculatorForJDKProxy;
 
 public class TestJDKProxy {
 

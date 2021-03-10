@@ -729,7 +729,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 				// Initialize message source for this context.
 				/*
-				* i18n国际化的操作，暂时不用看。
+				* i18n国际化的操作
 				* */
 				initMessageSource();
 

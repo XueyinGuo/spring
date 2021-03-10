@@ -529,7 +529,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 							"enhanced class '%s'", entry.getKey(), configClass.getName(), enhancedClass.getName()));
 				}
 				/*
-				* 把@Configuration类的 BeanDefinition的类型换成 代理类对象
+				* 把 @Configuration类的 BeanDefinition 的类型换成 代理类对象
 				* */
 				beanDef.setBeanClass(enhancedClass);
 			}

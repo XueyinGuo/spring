@@ -340,7 +340,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 						}
 						registerDependentBean(dep, beanName); //注册各个bean的依赖关系，方便进行销毁
 						try {
-							/*提前创建依赖的Bean*/
+							/* 提前创建依赖的Bean */
 							getBean(dep);
 						}
 						catch (NoSuchBeanDefinitionException ex) {

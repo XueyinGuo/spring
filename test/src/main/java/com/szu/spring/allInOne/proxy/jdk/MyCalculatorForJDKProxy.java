@@ -1,5 +1,7 @@
-package com.szu.spring.proxy.jdk;
+package com.szu.spring.allInOne.proxy.jdk;
 
+
+import com.szu.spring.proxy.jdk.CalculatorForJDKProxy;
 
 public class MyCalculatorForJDKProxy implements CalculatorForJDKProxy {
 

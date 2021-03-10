@@ -11,9 +11,9 @@
 		<property name="a" ref="a"></property>
 	</bean>
 
-	<bean id="c" class="com.szu.spring.cycleReference.C">
-		<property name="a" ref="a"></property>
-	</bean>
+<!--	<bean id="c" class="com.szu.spring.cycleReference.C">-->
+<!--		<property name="a" ref="a"></property>-->
+<!--	</bean>-->
 
 	<bean id="logger" class="com.szu.spring.cycleReference.Logger"></bean>
 
