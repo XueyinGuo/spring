@@ -19,7 +19,7 @@ package org.springframework.context.support
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.config.BeanDefinition
 import org.springframework.beans.factory.config.BeanDefinitionCustomizer
-import org.springframework.beans.factory.getBeanProvider
+//import org.springframework.beans.factory.getBeanProvider
 import org.springframework.beans.factory.support.BeanDefinitionReaderUtils
 import org.springframework.context.ApplicationContextInitializer
 import org.springframework.core.env.ConfigurableEnvironment
@@ -1114,7 +1114,7 @@ open class BeanDefinitionDsl internal constructor (private val init: BeanDefinit
 		 * of instances, including availability and uniqueness options.
 		 * @see org.springframework.beans.factory.BeanFactory.getBeanProvider
 		 */
-		inline fun <reified T : Any> provider() : ObjectProvider<T> = context.getBeanProvider()
+//		inline fun <reified T : Any> provider() : ObjectProvider<T> = context.getBeanProvider()
 
 	}
 
