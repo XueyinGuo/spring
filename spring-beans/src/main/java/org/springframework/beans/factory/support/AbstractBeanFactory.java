@@ -407,6 +407,9 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				}
 				/*
 				* 原型模式 和 单例模式 之外的模式
+				* RequestScope
+				* ServletContextScope
+				* SessionScope
 				* */
 				else {
 					String scopeName = mbd.getScope();

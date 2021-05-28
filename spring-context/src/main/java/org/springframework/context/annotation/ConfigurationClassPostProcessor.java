@@ -65,6 +65,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 /* 开启 <context:component-scan>之后开始扫描注解成BeanDefinition的类 */
+
 /**
  * {@link BeanFactoryPostProcessor} used for bootstrapping processing of
  * {@link Configuration @Configuration} classes.
@@ -92,8 +93,9 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	 * {@link #setBeanNameGenerator}. Note that the default for component scanning purposes
 	 * is a plain {@link AnnotationBeanNameGenerator#INSTANCE}, unless overridden through
 	 * {@link #setBeanNameGenerator} with a unified user-level bean name generator.
-	 * @since 5.2
+	 *
 	 * @see #setBeanNameGenerator
+	 * @since 5.2
 	 */
 	public static final AnnotationBeanNameGenerator IMPORT_BEAN_NAME_GENERATOR =
 			new FullyQualifiedAnnotationBeanNameGenerator();
@@ -129,10 +131,14 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
 	private boolean localBeanNameGeneratorSet = false;
 
-	/** Using short class names as default bean names by default. */
+	/**
+	 * Using short class names as default bean names by default.
+	 */
 	private BeanNameGenerator componentScanBeanNameGenerator = AnnotationBeanNameGenerator.INSTANCE;
 
-	/** Using fully qualified class names as default bean names by default. */
+	/**
+	 * Using fully qualified class names as default bean names by default.
+	 */
 	private BeanNameGenerator importBeanNameGenerator = IMPORT_BEAN_NAME_GENERATOR;
 
 
@@ -182,9 +188,10 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	 * standalone bean definition in XML, e.g. not using the dedicated {@code AnnotationConfig*}
 	 * application contexts or the {@code <context:annotation-config>} element. Any bean name
 	 * generator specified against the application context will take precedence over any set here.
-	 * @since 3.1.1
+	 *
 	 * @see AnnotationConfigApplicationContext#setBeanNameGenerator(BeanNameGenerator)
 	 * @see AnnotationConfigUtils#CONFIGURATION_BEAN_NAME_GENERATOR
+	 * @since 3.1.1
 	 */
 	public void setBeanNameGenerator(BeanNameGenerator beanNameGenerator) {
 		Assert.notNull(beanNameGenerator, "BeanNameGenerator must not be null");
@@ -233,8 +240,8 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		}
 		this.registriesPostProcessed.add(registryId);
 		/*
-		* 处理配置类的定义信息
-		* */
+		 * 处理配置类的定义信息
+		 * */
 		/*
 		 * 从标注了 @Component, @Repository, @Service, @Controller, @RestController, @ControllerAdvice, and
 		 * @Configuration 的 candidates 中解析 又标注了
@@ -271,8 +278,8 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			processConfigBeanDefinitions((BeanDefinitionRegistry) beanFactory);
 		}
 		/*
-		* 在此方法中创建所有的 @Configuration 注解标注的配置类，并给这些创建！！！代理对象！！
-		* */
+		 * 在此方法中创建所有的 @Configuration 注解标注的配置类，并给这些创建！！！代理对象！！
+		 * */
 		/*
 		 * 在之前扫描注解的时候，如果那个类被@Configuration 修饰，则把他的对应的BeanDefinition的
 		 * configurationClass 属性设置为了 “full”
@@ -292,47 +299,47 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	 * {@link Configuration} classes.
 	 */
 	/*
-	* 在此方法中完成
-	* @Configuration
-	* @Bean
-	* @Import
-	* @Component
-	* @ComponentScan
-	* @ComponentScans 的扫描解析工作， 如果我对这个方法了解清楚了，那么SpringBoot的自动装配原理我就搞懂了
-	* */
+	 * 在此方法中完成
+	 * @Configuration
+	 * @Bean
+	 * @Import
+	 * @Component
+	 * @ComponentScan
+	 * @ComponentScans 的扫描解析工作， 如果我对这个方法了解清楚了，那么SpringBoot的自动装配原理我就搞懂了
+	 * */
 	public void processConfigBeanDefinitions(BeanDefinitionRegistry registry) {
 		List<BeanDefinitionHolder> configCandidates = new ArrayList<>();
 		/*
-		* 先获取到标注了 @Component, @Repository, @Service,
-		*       @Controller, @RestController, @ControllerAdvice, and @Configuration 的BeanDefinition，然后进行后续处理，
-		* 标注了这些注解都是 candidate
-		* */
+		 * 先获取到标注了 @Component, @Repository, @Service,
+		 *       @Controller, @RestController, @ControllerAdvice, and @Configuration 的BeanDefinition，然后进行后续处理，
+		 * 标注了这些注解都是 candidate
+		 * */
 		String[] candidateNames = registry.getBeanDefinitionNames();
 		/*
-		* 开始遍历所有要处理的 beanDefinition 名称，筛选备注解修饰的 beanDefinition
-		* */
+		 * 开始遍历所有要处理的 beanDefinition 名称，筛选备注解修饰的 beanDefinition
+		 * */
 		for (String beanName : candidateNames) {
 			BeanDefinition beanDef = registry.getBeanDefinition(beanName);
 			/*
-			* 如果 beanDefinition 的 configurationClass 属性不为空，则意味着已经处理过，输出日志信息
-			* */
+			 * 如果 beanDefinition 的 configurationClass 属性不为空，则意味着已经处理过，输出日志信息
+			 * */
 			if (beanDef.getAttribute(ConfigurationClassUtils.CONFIGURATION_CLASS_ATTRIBUTE) != null) {
 				if (logger.isDebugEnabled()) {
 					logger.debug("Bean definition has already been processed as a configuration class: " + beanDef);
 				}
 			}
 			/*
-			* 判断当前的 beanDefinition 是否加了 @Configuration （优先级最高），
-			* 然后判断 是否被 @Bean @Component @ComponentScan @Import @ImportSource
-			* 是则添加到集合  @Service 上标了 @Component， @Component上有@Indexed
-			* */
+			 * 判断当前的 beanDefinition 是否加了 @Configuration （优先级最高），
+			 * 然后判断 是否被 @Bean @Component @ComponentScan @Import @ImportSource
+			 * 是则添加到集合  @Service 上标了 @Component， @Component上有@Indexed
+			 * */
 			else if (ConfigurationClassUtils.checkConfigurationClassCandidate(beanDef, this.metadataReaderFactory)) {
 				configCandidates.add(new BeanDefinitionHolder(beanDef, beanName));
 			}
 		}
 		/*
-		* 之后的逻辑就是把 configCandidates 集合中类，开始解析这些类中的 注解中携带的参数进行解析
-		* */
+		 * 之后的逻辑就是把 configCandidates 集合中类，开始解析这些类中的 注解中携带的参数进行解析
+		 * */
 		// Return immediately if no @Configuration classes were found
 		if (configCandidates.isEmpty()) {
 			return;
@@ -340,8 +347,8 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
 		// Sort by previously determined @Order value, if applicable
 		/*
-		* 按照Order值进行排序操作，然后按照优先级进行解析
-		* */
+		 * 按照Order值进行排序操作，然后按照优先级进行解析
+		 * */
 		configCandidates.sort((bd1, bd2) -> {
 			int i1 = ConfigurationClassUtils.getOrder(bd1.getBeanDefinition());
 			int i2 = ConfigurationClassUtils.getOrder(bd2.getBeanDefinition());
@@ -380,10 +387,12 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		Set<ConfigurationClass> alreadyParsed = new HashSet<>(configCandidates.size());
 		do {
 			/*
-			* 从标注了 @Component, @Repository, @Service, @Controller, @RestController, @ControllerAdvice, and
-			* @Configuration 的 candidates 中解析 又标注了
-			* @Import @ImportResource @ComponentScan @ComponentScans @Bean 的 */
+			 * 从标注了 @Component, @Repository, @Service, @Controller, @RestController, @ControllerAdvice, and
+			 * @Configuration 的 candidates 中解析 又标注了
+			 * @Import @ImportResource @ComponentScan @ComponentScans @Bean 的 */
 			/*
+			 * ====================================================================
+			 * ====================================================================
 			 * 经过一系列判断之后开始进行注解的处理工作
 			 * 1.先处理内部类，处理内部类的最后 还是调用 doProcessConfigurationClass() 方法
 			 * 2.处理属性资源文件， 加了@PropertySource 的注解
@@ -393,6 +402,8 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			 * 		4.2 被import进来的类也可能加了 @Import，所以递归一下
 			 * 5.处理 @ImportResource 引入的配置文件
 			 * 6.处理加了 @Bean 的方法
+			 * ====================================================================
+			 * ====================================================================
 			 * */
 			parser.parse(candidates);
 			parser.validate();
@@ -407,9 +418,9 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 						this.importBeanNameGenerator, parser.getImportRegistry());
 			}
 			/*
-			* 将填充好的 ConfigurationClass 实例转化为 BeanDefinition 注册进BeanDefinitionMap
-			* 如果 @Configuration 的类中导入了其他的东西
-			* */
+			 * 将填充好的 ConfigurationClass 实例转化为 BeanDefinition 注册进BeanDefinitionMap
+			 * 如果 @Configuration 的类中导入了其他的东西
+			 * */
 			this.reader.loadBeanDefinitions(configClasses);
 			alreadyParsed.addAll(configClasses);
 
@@ -451,6 +462,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	 * Post-processes a BeanFactory in search of Configuration class BeanDefinitions;
 	 * any candidates are then enhanced by a {@link ConfigurationClassEnhancer}.
 	 * Candidate status is determined by BeanDefinition attribute metadata.
+	 *
 	 * @see ConfigurationClassEnhancer
 	 */
 	public void enhanceConfigurationClasses(ConfigurableListableBeanFactory beanFactory) {
@@ -473,29 +485,27 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 				if (!abd.hasBeanClass()) {
 					try {
 						abd.resolveBeanClass(this.beanClassLoader);
-					}
-					catch (Throwable ex) {
+					} catch (Throwable ex) {
 						throw new IllegalStateException(
 								"Cannot load configuration class: " + beanDef.getBeanClassName(), ex);
 					}
 				}
 			}
 			/*
-			* 在之前扫描注解的时候，如果那个类被@Configuration修饰，则把他的对应的BeanDefinition的
-			* configurationClass 属性设置为了 “full”
-			* 不是配置类的设置为了 “lite”
-			* 当遍历到的BeanDefinition是full的时候，也就是说这是个 配置类，
-			* 然而配置类中的所有属性都应该是单例的，
-			*
-			* 所以当出现这种情况的时候： com.szu.spring.txTest.annotation.MyConfiguration 中这样的情况的时候
-			* 创建代理类来保证配置类中的每个 Bean 都是单例的
-			* */
+			 * 在之前扫描注解的时候，如果那个类被@Configuration修饰，则把他的对应的BeanDefinition的
+			 * configurationClass 属性设置为了 “full”
+			 * 不是配置类的设置为了 “lite”
+			 * 当遍历到的BeanDefinition是full的时候，也就是说这是个 配置类，
+			 * 然而配置类中的所有属性都应该是单例的，
+			 *
+			 * 所以当出现这种情况的时候： com.szu.spring.txTest.annotation.MyConfiguration 中这样的情况的时候
+			 * 创建代理类来保证配置类中的每个 Bean 都是单例的
+			 * */
 			if (ConfigurationClassUtils.CONFIGURATION_CLASS_FULL.equals(configClassAttr)) {
 				if (!(beanDef instanceof AbstractBeanDefinition)) {
 					throw new BeanDefinitionStoreException("Cannot enhance @Configuration bean definition '" +
 							beanName + "' since it is not stored in an AbstractBeanDefinition subclass");
-				}
-				else if (logger.isInfoEnabled() && beanFactory.containsSingleton(beanName)) {
+				} else if (logger.isInfoEnabled() && beanFactory.containsSingleton(beanName)) {
 					logger.info("Cannot enhance @Configuration bean definition '" + beanName +
 							"' since its singleton instance has been created too early. The typical cause " +
 							"is a non-static @Bean method with a BeanDefinitionRegistryPostProcessor " +
@@ -505,8 +515,8 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			}
 		}
 		/*
-		* 获取到所有的 @Configuration 注解标注的配置类
-		* */
+		 * 获取到所有的 @Configuration 注解标注的配置类
+		 * */
 		if (configBeanDefs.isEmpty()) {
 			// nothing to enhance -> return immediately
 			return;
@@ -520,8 +530,8 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			// Set enhanced subclass of the user-specified bean class
 			Class<?> configClass = beanDef.getBeanClass();
 			/*
-			* 创建代理类
-			* */
+			 * 创建代理类
+			 * */
 			Class<?> enhancedClass = enhancer.enhance(configClass, this.beanClassLoader);
 			if (configClass != enhancedClass) {
 				if (logger.isTraceEnabled()) {
@@ -529,8 +539,8 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 							"enhanced class '%s'", entry.getKey(), configClass.getName(), enhancedClass.getName()));
 				}
 				/*
-				* 把 @Configuration类的 BeanDefinition 的类型换成 代理类对象
-				* */
+				 * 把 @Configuration类的 BeanDefinition 的类型换成 代理类对象
+				 * */
 				beanDef.setBeanClass(enhancedClass);
 			}
 		}
