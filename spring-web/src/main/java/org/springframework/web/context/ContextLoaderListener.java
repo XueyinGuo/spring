@@ -99,7 +99,15 @@ public class ContextLoaderListener extends ContextLoader implements ServletConte
 	 * Initialize the root web application context.
 	 */
 	@Override
+	/*
+	* SpringMVC容器启动
+	* context:parameters: "contextConfigLocation" -> classpath:spring-config.xml (给Spring容器使用的配置文件)
+	* */
 	public void contextInitialized(ServletContextEvent event) {
+		/*
+		 * 此方法执行完之后，XMLWebApplicationContext 已经拥有了 DefaultListableBeanFactory，但是 parent 还为 null
+		 * 而且 SpringMVC 还没启动
+		 * */
 		initWebApplicationContext(event.getServletContext());
 	}
 

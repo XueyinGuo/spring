@@ -140,6 +140,11 @@ public class ContextLoader {
 		// This is currently strictly internal and not meant to be customized
 		// by application developers.
 		try {
+			/*
+			* 找到 ContextLoader.properties 这个配置文件，我们可以发现
+			* org.springframework.web.context.WebApplicationContext=org.springframework.web.context.support.XmlWebApplicationContext
+			* 这个配置项
+			* */
 			ClassPathResource resource = new ClassPathResource(DEFAULT_STRATEGIES_PATH, ContextLoader.class);
 			defaultStrategies = PropertiesLoaderUtils.loadProperties(resource);
 		}
@@ -270,26 +275,30 @@ public class ContextLoader {
 		if (logger.isInfoEnabled()) {
 			logger.info("Root WebApplicationContext: initialization started");
 		}
+		/* 记录启动时间 */
 		long startTime = System.currentTimeMillis();
 
 		try {
 			// Store context in local instance variable, to guarantee that
 			// it is available on ServletContext shutdown.
+			/*
+			* 此时的 this 是监听器 contextLoadListener, 开始创建 webApplicationContext，获取到一个 Root webApplicationContext
+			* */
 			if (this.context == null) {
 				this.context = createWebApplicationContext(servletContext);
 			}
 			if (this.context instanceof ConfigurableWebApplicationContext) {
 				ConfigurableWebApplicationContext cwac = (ConfigurableWebApplicationContext) this.context;
-				if (!cwac.isActive()) {
+				if (!cwac.isActive()) { /* 容器还没刷新，所以暂时不是活跃的 */
 					// The context has not yet been refreshed -> provide services such as
 					// setting the parent context, setting the application context id, etc
-					if (cwac.getParent() == null) {
+					if (cwac.getParent() == null) { /* 当前 context 有没有爹 */
 						// The context instance was injected without an explicit parent ->
 						// determine parent for root web application context, if any.
-						ApplicationContext parent = loadParentContext(servletContext);
-						cwac.setParent(parent);
+						ApplicationContext parent = loadParentContext(servletContext); /* 返回一个 null */
+						cwac.setParent(parent); /* 就把爹暂时设置为 null */
 					}
-					configureAndRefreshWebApplicationContext(cwac, servletContext);
+					configureAndRefreshWebApplicationContext(cwac, servletContext); /* 创建 Spring 容器，调用 refresh() */
 				}
 			}
 			servletContext.setAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE, this.context);
@@ -306,7 +315,9 @@ public class ContextLoader {
 				long elapsedTime = System.currentTimeMillis() - startTime;
 				logger.info("Root WebApplicationContext initialized in " + elapsedTime + " ms");
 			}
-
+			/*
+			* 此时这个 XMLWebApplicationContext 已经拥有了 DefaultListableBeanFactory，但是 parent 还为 null
+			* */
 			return this.context;
 		}
 		catch (RuntimeException | Error ex) {
@@ -329,7 +340,12 @@ public class ContextLoader {
 	 * @see ConfigurableWebApplicationContext
 	 */
 	protected WebApplicationContext createWebApplicationContext(ServletContext sc) {
+		/*
+		* 走完这个方法之后就加载好了
+		* XmlWebApplicationContext 这个类
+		* */
 		Class<?> contextClass = determineContextClass(sc);
+		/* 自己配置的 contextClass 必须实现 ConfigurableWebApplicationContext */
 		if (!ConfigurableWebApplicationContext.class.isAssignableFrom(contextClass)) {
 			throw new ApplicationContextException("Custom context class [" + contextClass.getName() +
 					"] is not of type [" + ConfigurableWebApplicationContext.class.getName() + "]");
@@ -346,6 +362,15 @@ public class ContextLoader {
 	 * @see org.springframework.web.context.support.XmlWebApplicationContext
 	 */
 	protected Class<?> determineContextClass(ServletContext servletContext) {
+		/*
+		* 你的配置项里有 contextClass 这个东西吗？
+		* <context-param>
+			<param-name>contextClass</param-name>
+			<param-value>xxxxxxx</param-value>
+		</context-param>
+		* 我们可以手动配置 去跳入这个 if，但是一般不这么做
+		* 默认使用下边的默认配置策略就好
+		* */
 		String contextClassName = servletContext.getInitParameter(CONTEXT_CLASS_PARAM);
 		if (contextClassName != null) {
 			try {
@@ -357,6 +382,11 @@ public class ContextLoader {
 			}
 		}
 		else {
+			/*
+			* 默认配置
+			* 从上边的静态代码块中就加载到了 WebApplicationContext 这个类
+			* defaultStrategies
+			* */
 			contextClassName = defaultStrategies.getProperty(WebApplicationContext.class.getName());
 			try {
 				return ClassUtils.forName(contextClassName, ContextLoader.class.getClassLoader());
@@ -382,7 +412,7 @@ public class ContextLoader {
 						ObjectUtils.getDisplayString(sc.getContextPath()));
 			}
 		}
-
+		/* 设置配置文件位置 contextConfigLocation */
 		wac.setServletContext(sc);
 		String configLocationParam = sc.getInitParameter(CONFIG_LOCATION_PARAM);
 		if (configLocationParam != null) {
@@ -392,12 +422,20 @@ public class ContextLoader {
 		// The wac environment's #initPropertySources will be called in any case when the context
 		// is refreshed; do it eagerly here to ensure servlet property sources are in place for
 		// use in any post-processing or initialization that occurs below prior to #refresh
+		/*
+		* 获取环境对象，此时环境对象中多了三个 两个 servlet 相关的 + 1个JNDI相关的属性
+		* */
 		ConfigurableEnvironment env = wac.getEnvironment();
 		if (env instanceof ConfigurableWebEnvironment) {
 			((ConfigurableWebEnvironment) env).initPropertySources(sc, null);
 		}
 
 		customizeContext(sc, wac);
+		/*
+		* ===============================
+		* 调用 Spring 的 refresh() 方法！！！
+		* ===============================
+		* */
 		wac.refresh();
 	}
 

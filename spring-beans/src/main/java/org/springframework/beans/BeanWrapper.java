@@ -46,6 +46,11 @@ import java.beans.PropertyDescriptor;
  * @see org.springframework.validation.BeanPropertyBindingResult
  * @see org.springframework.validation.DataBinder#initBeanPropertyAccess()
  */
+/*
+* Spring 中的核心接口，是Spring 中的一个包装类，具有单独或者批量设置属性值得功能
+* 还可以获取属性描述符 和 读写属性的 功能
+* 还可以完成 属性的类型转换
+* */
 public interface BeanWrapper extends ConfigurablePropertyAccessor {
 
 	/**

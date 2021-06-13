@@ -385,6 +385,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	@Override
 	public void publishEvent(ApplicationEvent event) {
+		/*
+		 * 多播器广播容器刷新完成事件，对应监听器执行相应的方法
+		 * */
 		publishEvent(event, null);
 	}
 
@@ -428,6 +431,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			this.earlyApplicationEvents.add(applicationEvent);
 		}
 		else {
+			/*
+			* 多播器广播容器刷新完成事件，对应监听器执行相应的方法
+			* */
 			getApplicationEventMulticaster().multicastEvent(applicationEvent, eventType);
 		}
 
@@ -839,7 +845,8 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 				// Last step: publish corresponding event.
 				/*
-				* 完成刷新
+				* 完成刷新，
+				* 执行一些Bean的生命周期方法
 				* */
 				finishRefresh();
 			}
@@ -1400,6 +1407,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		getLifecycleProcessor().onRefresh();
 
 		// Publish the final event.
+		/*
+		* 容器刷新完成了，发布事件
+		* */
 		publishEvent(new ContextRefreshedEvent(this));
 
 		// Participate in LiveBeansView MBean, if active.

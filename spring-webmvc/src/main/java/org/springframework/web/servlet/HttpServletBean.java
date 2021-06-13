@@ -148,12 +148,17 @@ public abstract class HttpServletBean extends HttpServlet implements Environment
 	@Override
 	public final void init() throws ServletException {
 
-		// Set bean properties from init parameters.
+		/* init-param 中的 contextConfigLocation -> classpath:applicationContext.xml 记录到 PVS */
 		PropertyValues pvs = new ServletConfigPropertyValues(getServletConfig(), this.requiredProperties);
 		if (!pvs.isEmpty()) {
 			try {
+				/*
+				* Spring 中的核心接口，是Spring 中的一个包装类，具有单独或者批量设置属性值得功能，
+				* 还可以获取属性描述符 和 读写属性的 功能，还可以完成 属性的类型转换
+				* */
 				BeanWrapper bw = PropertyAccessorFactory.forBeanPropertyAccess(this);
-				ResourceLoader resourceLoader = new ServletContextResourceLoader(getServletContext());
+				ResourceLoader resourceLoader = new ServletContextResourceLoader(getServletContext()); /* 资源加载器 */
+				/* 注册属性编辑器，ResourceEditor中有 setAsTest方法，属性值解析 */
 				bw.registerCustomEditor(Resource.class, new ResourceEditor(resourceLoader, getEnvironment()));
 				initBeanWrapper(bw);
 				bw.setPropertyValues(pvs, true);

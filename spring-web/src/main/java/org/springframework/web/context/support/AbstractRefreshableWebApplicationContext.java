@@ -97,7 +97,9 @@ public abstract class AbstractRefreshableWebApplicationContext extends AbstractR
 	@Nullable
 	private ThemeSource themeSource;
 
-
+	/*
+	* 把 XMLWebApplicationContext 设置为 Root什么什么
+	* */
 	public AbstractRefreshableWebApplicationContext() {
 		setDisplayName("Root WebApplicationContext");
 	}
@@ -166,10 +168,17 @@ public abstract class AbstractRefreshableWebApplicationContext extends AbstractR
 	 */
 	@Override
 	protected void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
+		/*
+		* 后置处理 Bean工厂
+		* 给Bean工厂 “知道有” servletContext 存在
+		* */
 		beanFactory.addBeanPostProcessor(new ServletContextAwareProcessor(this.servletContext, this.servletConfig));
 		beanFactory.ignoreDependencyInterface(ServletContextAware.class);
 		beanFactory.ignoreDependencyInterface(ServletConfigAware.class);
-
+		/*
+		* Spring 中Bean作用于有两个：singleton prototype
+		* SpringMVC 里边多加两个 ： session  request
+		* */
 		WebApplicationContextUtils.registerWebApplicationScopes(beanFactory, this.servletContext);
 		WebApplicationContextUtils.registerEnvironmentBeans(beanFactory, this.servletContext, this.servletConfig);
 	}
