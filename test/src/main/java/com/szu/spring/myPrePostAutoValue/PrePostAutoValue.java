@@ -11,8 +11,8 @@ import javax.annotation.PreDestroy;
 @Component
 public class PrePostAutoValue {
 
-	@Autowired
-	private Apple apple;
+//	@Autowired
+//	private Apple apple;
 
 	public PrePostAutoValue() {
 	}

@@ -218,6 +218,9 @@ public class InitDestroyAnnotationBeanPostProcessor
 			synchronized (this.lifecycleMetadataCache) {
 				metadata = this.lifecycleMetadataCache.get(clazz);
 				if (metadata == null) {
+					/*
+					* 两个注解的处理
+					*  */
 					metadata = buildLifecycleMetadata(clazz);
 					this.lifecycleMetadataCache.put(clazz, metadata); /* 创建完放入缓存 */
 				}
